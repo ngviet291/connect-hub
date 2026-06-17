@@ -4,7 +4,6 @@ import com.connecthub.common.entity.BaseEntity;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.user.entity.User;
-import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,11 +24,11 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "recipient_id")
     private User recipient;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_id")
     private User actor;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
     private String content;

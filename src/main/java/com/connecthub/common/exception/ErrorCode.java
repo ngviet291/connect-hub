@@ -24,7 +24,10 @@ public enum ErrorCode {
     DUPLICATE_EMAIL( "Email {email} already exists", HttpStatus.CONFLICT),
     DUPLICATE_PHONE( "Phone number {phone} already exists", HttpStatus.CONFLICT),
     BAD_CREDENTIALS( "Bad credentials", HttpStatus.UNAUTHORIZED),
-    TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED)
+    TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED),
+
+
+    NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND)
 
 
 

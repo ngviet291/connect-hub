@@ -40,11 +40,11 @@ public class AppUtil {
 
 
     /**
-     * Lấy email của người dùng đã xác thực từ SecurityContextHolder.
-     * @return Email của người dùng đã xác thực.
+     * Lấy username của người dùng đã xác thực từ SecurityContextHolder.
+     * @return Username của người dùng đã xác thực.
      * @throws AppException nếu không có người dùng nào đã xác thực hoặc người dùng không có quyền truy cập.
      */
-    public static String emailFromAuthentication() {
+    public static String usernameFromAuthentication() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
