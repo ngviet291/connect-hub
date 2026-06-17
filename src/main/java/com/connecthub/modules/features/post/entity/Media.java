@@ -15,9 +15,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "media")
 public class Media extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "post_id")
     private Post post;

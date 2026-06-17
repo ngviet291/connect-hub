@@ -3,13 +3,17 @@ package com.connecthub.modules.features.post.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
-@IdClass(PostHashtagId.class)
+@IdClass(PostHashtag.PostHashtagId.class)
+@Table(name = "post_hashtags")
 public class PostHashtag {
     @Id
     @ManyToOne
@@ -19,4 +23,15 @@ public class PostHashtag {
     @ManyToOne
     @JoinColumn(name = "post_id")
     private Post post;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    @Getter
+    @Setter
+    public static class PostHashtagId implements Serializable {
+        private UUID post;
+        private UUID hashtag;
+    }
+
 }

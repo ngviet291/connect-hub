@@ -5,7 +5,9 @@ import com.connecthub.modules.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -13,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@IdClass(ConversationMemberId.class)
+@IdClass(ConversationMember.ConversationMemberId.class)
 public class ConversationMember extends BaseEntity {
     @Id
     @ManyToOne
@@ -24,5 +26,15 @@ public class ConversationMember extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
     private LocalDateTime joinedAt;
+
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    public static class ConversationMemberId implements Serializable {
+        private UUID conversation;
+        private UUID user;
+    }
 
 }

@@ -15,9 +15,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "messages")
 public class Message extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "conversation_id")
     private Conversation conversation;
