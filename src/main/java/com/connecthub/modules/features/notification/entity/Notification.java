@@ -16,9 +16,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "notifications")
 public class Notification extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "recipient_id")
     private User recipient;

@@ -1,14 +1,11 @@
 package com.connecthub.modules.features.user.entity;
 
 import com.connecthub.common.entity.BaseEntity;
-import com.github.f4b6a3.uuid.UuidCreator;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import com.connecthub.modules.features.user.enums.RoleName;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Set;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,10 +13,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "roles")
 public class Role extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
-    private String name;
+    private String id;
+
+    @Column(unique = true)
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    private RoleName name;
 
     @ManyToMany(mappedBy = "roles")
     private Set<User> users;

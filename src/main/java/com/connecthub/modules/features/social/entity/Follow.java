@@ -14,9 +14,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "follows", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"follower_id", "following_id"})
+})
 public class Follow extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "follower_id")
     private User follower;

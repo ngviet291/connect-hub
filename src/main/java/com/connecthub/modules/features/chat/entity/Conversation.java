@@ -15,9 +15,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "conversations")
 public class Conversation extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @Enumerated(EnumType.STRING)
     private ConversationType type;
 
