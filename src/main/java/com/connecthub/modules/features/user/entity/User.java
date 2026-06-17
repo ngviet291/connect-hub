@@ -24,10 +24,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-
+@Table(name = "users")
 public class User extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String username;
@@ -38,8 +38,17 @@ public class User extends BaseEntity {
     private String password;
     @Column(nullable = false)
     private String fullName;
+    @Column(nullable = false, unique = true)
+    private String phoneNumber;
     private String avatarUrl;
     private String bio;
+
+    @Builder.Default
+    private boolean isLocked = false;
+
+    @Builder.Default
+    private boolean isActive = true;
+
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 

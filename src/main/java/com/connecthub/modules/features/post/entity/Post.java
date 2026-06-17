@@ -22,9 +22,11 @@ import java.util.UUID;
 @Builder
 @Entity
 @SQLDelete(sql = "UPDATE post SET deleted_at = NOW() ,is_deleted = true WHERE id = ?")
+@Table(name = "post")
 public class Post extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

@@ -16,9 +16,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "message_media")
 public class MessageReceipt extends BaseEntity {
     @Id
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+    private UUID id;
     @ManyToOne
     @JoinColumn(name = "message_id")
     private Message message;
