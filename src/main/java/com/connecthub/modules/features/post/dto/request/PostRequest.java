@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.post.dto.request;
 
 import com.connecthub.modules.features.post.enums.Visibility;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.Builder;
 
@@ -20,7 +21,8 @@ public class PostRequest {
 
     private UUID quotePostId;
 
-    private Visibility visibility;
+    @Builder.Default
+    private Visibility visibility = Visibility.PUBLIC;
 
     private List<UUID> mediaIds;
 

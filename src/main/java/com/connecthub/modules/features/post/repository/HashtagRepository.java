@@ -9,4 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface HashtagRepository extends JpaRepository<Hashtag, UUID> {
+    Optional<Hashtag> findByName(String name);
 }
