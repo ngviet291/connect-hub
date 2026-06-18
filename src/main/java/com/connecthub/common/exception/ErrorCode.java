@@ -26,7 +26,7 @@ public enum ErrorCode {
     BAD_CREDENTIALS( "Bad credentials", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED),
 
-
+    ACCESS_DENIED( "Access denied", HttpStatus.FORBIDDEN),
     NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND)
 
 
