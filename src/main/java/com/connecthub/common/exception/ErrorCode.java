@@ -27,9 +27,11 @@ public enum ErrorCode {
     TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED),
 
 
-    NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND)
-
-
+    NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND),
+    HASHTAG_NOT_FOUND( "Hashtag not found", HttpStatus.NOT_FOUND),
+    MENTIONED_USER_NOT_FOUND( "Mentioned user not found", HttpStatus.NOT_FOUND),
+    POST_ACCESS_DENIED( "Access denied to the post", HttpStatus.FORBIDDEN),
+    POST_NOT_FOUND( "Post not found", HttpStatus.NOT_FOUND)
 
     ;
 

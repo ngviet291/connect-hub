@@ -11,5 +11,5 @@ import java.util.UUID;
 
 @Repository
 public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
-    long countByPost_Id(UUID postId);
+    long countByPostId(UUID postId);
 }

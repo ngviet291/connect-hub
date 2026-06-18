@@ -1,7 +1,10 @@
 package com.connecthub.modules.features.post.exception;
 
-public class HashtagNotFoundException extends RuntimeException {
+import com.connecthub.common.exception.AppException;
+import com.connecthub.common.exception.ErrorCode;
+
+public class HashtagNotFoundException extends AppException {
     public HashtagNotFoundException() {
-        super("Hashtag not found");
+        super(ErrorCode.HASHTAG_NOT_FOUND);
     }
 }

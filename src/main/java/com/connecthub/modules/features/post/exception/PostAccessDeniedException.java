@@ -1,7 +1,10 @@
 package com.connecthub.modules.features.post.exception;
 
-public class PostAccessDeniedException extends RuntimeException {
+import com.connecthub.common.exception.AppException;
+import com.connecthub.common.exception.ErrorCode;
+
+public class PostAccessDeniedException extends AppException {
     public PostAccessDeniedException(String action) {
-        super("You don't have permission to " + action + " this post");
+        super("Access denied to " + action + " this post");
     }
 }

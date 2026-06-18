@@ -1,10 +1,12 @@
 package com.connecthub.modules.features.post.exception;
 
-public class PostNotFoundException extends RuntimeException {
-    public PostNotFoundException() {
-        super("Post not found");
-    }
+import com.connecthub.common.exception.AppException;
+import com.connecthub.common.exception.ErrorCode;
 
+public class PostNotFoundException extends AppException {
+    public PostNotFoundException() {
+        super(ErrorCode.POST_NOT_FOUND);
+    }
     public PostNotFoundException(String message) {
         super(message);
     }
