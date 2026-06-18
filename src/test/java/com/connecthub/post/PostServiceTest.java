@@ -49,12 +49,12 @@ class PostServiceTest {
     private PostService postService;
 
     private MockedStatic<AppUtil> mockedAppUtil;
-    private final String MOCK_USERNAME = "test_user";
+    private final UUID MOCK_USERID = UUID.fromString("019ed9d6-65e9-7267-b396-7ac0ad80ded8");
 
     @BeforeEach
     void setUp() {
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::usernameFromAuthentication).thenReturn(MOCK_USERNAME);
+        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(MOCK_USERID);
         mockedAppUtil.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
     }
 
@@ -85,14 +85,14 @@ class PostServiceTest {
         @DisplayName("Thành công - Tạo bài viết thường (Không có quan hệ/hashtag/mention)")
         void createPost_Success() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             PostRequest request = new PostRequest();
             request.setContent("Hello World");
 
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
             Post savedPost = Post.builder().id(UUID.randomUUID()).user(user).content("Hello World").build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
@@ -103,7 +103,7 @@ class PostServiceTest {
 
             // Assert
             assertNotNull(result);
-            verify(userRepository).findByUsername(MOCK_USERNAME);
+            verify(userRepository).findById(MOCK_USERID);
             verify(postRepository).save(any(Post.class));
         }
 
@@ -111,7 +111,7 @@ class PostServiceTest {
         @DisplayName("Thành công - Tạo bài viết phản hồi (Có parentPostId)")
         void createPost_WithParentPost_Success() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             UUID parentId = UUID.randomUUID();
             PostRequest request = new PostRequest();
             request.setContent("This is a reply");
@@ -121,7 +121,7 @@ class PostServiceTest {
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
             Post savedPost = Post.builder().id(UUID.randomUUID()).user(user).parentPost(parentPost).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.findById(parentId)).thenReturn(Optional.of(parentPost));
             when(postRepository.save(any(Post.class))).thenReturn(savedPost);
@@ -140,14 +140,14 @@ class PostServiceTest {
         @DisplayName("Thất bại - Không tìm thấy bài viết cha (Parent Post)")
         void createPost_ParentPostNotFound() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             UUID fakeParentId = UUID.randomUUID();
             PostRequest request = new PostRequest();
             request.setParentPostId(fakeParentId);
 
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.findById(fakeParentId)).thenReturn(Optional.empty());
 
@@ -159,7 +159,7 @@ class PostServiceTest {
         @DisplayName("Thành công - Tạo bài viết trích dẫn (Có quotePostId)")
         void createPost_WithQuotePost_Success() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             UUID quoteId = UUID.randomUUID();
             PostRequest request = new PostRequest();
             request.setContent("Check this out!");
@@ -169,7 +169,7 @@ class PostServiceTest {
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
             Post savedPost = Post.builder().id(UUID.randomUUID()).user(user).quotePost(quotePost).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.findById(quoteId)).thenReturn(Optional.of(quotePost));
             when(postRepository.save(any(Post.class))).thenReturn(savedPost);
@@ -188,14 +188,14 @@ class PostServiceTest {
         @DisplayName("Thất bại - Không tìm thấy bài viết trích dẫn (Quote Post)")
         void createPost_QuotePostNotFound() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             UUID fakeQuoteId = UUID.randomUUID();
             PostRequest request = new PostRequest();
             request.setQuotePostId(fakeQuoteId);
 
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.findById(fakeQuoteId)).thenReturn(Optional.empty());
 
@@ -207,7 +207,7 @@ class PostServiceTest {
         @DisplayName("Thành công - Có đính kèm Hashtags và Mentions")
         void createPost_WithHashtagsAndMentions_Success() {
             // Arrange
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             PostRequest request = new PostRequest();
             request.setContent("Hello #Java @user123");
             request.setHashtags(List.of("Java"));
@@ -218,7 +218,7 @@ class PostServiceTest {
             Post mockPost = new Post(); // Thêm post mồi tránh NPE
             Post savedPost = Post.builder().id(UUID.randomUUID()).user(user).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockPost); // Mock mapper
             when(postRepository.save(any(Post.class))).thenReturn(savedPost);
             when(hashtagRepository.findByName("Java")).thenReturn(Optional.empty());
@@ -246,7 +246,7 @@ class PostServiceTest {
         void createPost_UserNotFound() {
             // Arrange
             PostRequest request = new PostRequest();
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.empty());
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThrows(UserNotFoundException.class, () -> postService.createPost(request));
@@ -309,12 +309,12 @@ class PostServiceTest {
         @DisplayName("Thành công - Cập nhật bài viết")
         void updatePost_Success() {
             UUID postId = UUID.randomUUID();
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             Post post = Post.builder().id(postId).user(user).isDeleted(false).build();
             PostRequest request = new PostRequest();
             request.setContent("Updated content");
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
             when(postRepository.save(any(Post.class))).thenReturn(post);
 
@@ -329,10 +329,10 @@ class PostServiceTest {
         void updatePost_AccessDenied() {
             UUID postId = UUID.randomUUID();
             User owner = User.builder().id(UUID.randomUUID()).build();
-            User currentUser = User.builder().id(UUID.randomUUID()).build();
+            User currentUser = User.builder().id(MOCK_USERID).build();
             Post post = Post.builder().id(postId).user(owner).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(currentUser));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(currentUser));
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
 
             assertThrows(PostAccessDeniedException.class, () -> postService.updatePost(postId, new PostRequest()));
@@ -350,10 +350,10 @@ class PostServiceTest {
         @DisplayName("Thành công - Xóa mềm bài viết của chính mình")
         void deletePost_Success() {
             UUID postId = UUID.randomUUID();
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
             Post post = Post.builder().id(postId).user(user).isDeleted(false).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
             when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -366,7 +366,7 @@ class PostServiceTest {
         @DisplayName("Thất bại - Không tìm thấy User đang thao tác")
         void deletePost_UserNotFound() {
             UUID postId = UUID.randomUUID();
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.empty());
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.empty());
 
             assertThrows(UserNotFoundException.class, () -> postService.deletePost(postId));
         }
@@ -375,9 +375,9 @@ class PostServiceTest {
         @DisplayName("Thất bại - Không tìm thấy bài viết cần xóa")
         void deletePost_PostNotFound() {
             UUID postId = UUID.randomUUID();
-            User user = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User user = User.builder().id(MOCK_USERID).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(user));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(user));
             when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
             assertThrows(PostNotFoundException.class, () -> postService.deletePost(postId));
@@ -387,11 +387,11 @@ class PostServiceTest {
         @DisplayName("Thất bại - Không có quyền xóa bài viết của người khác")
         void deletePost_AccessDenied() {
             UUID postId = UUID.randomUUID();
-            User currentUser = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User currentUser = User.builder().id(MOCK_USERID).build();
             User postOwner = User.builder().id(UUID.randomUUID()).username("other_user").build();
             Post post = Post.builder().id(postId).user(postOwner).isDeleted(false).build();
 
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(currentUser));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(currentUser));
             when(postRepository.findById(postId)).thenReturn(Optional.of(post));
 
             PostAccessDeniedException exception = assertThrows(PostAccessDeniedException.class, () -> postService.deletePost(postId));
@@ -743,7 +743,7 @@ class PostServiceTest {
         @DisplayName("createReply() - Thành công - Tạo phản hồi cho bài viết hợp lệ")
         void createReply_Success() {
             // Arrange
-            User currentUser = User.builder().id(UUID.randomUUID()).username(MOCK_USERNAME).build();
+            User currentUser = User.builder().id(MOCK_USERID).build();
             Post mockReplyPost = new Post();
             Post savedReply = Post.builder()
                     .id(UUID.randomUUID())
@@ -756,7 +756,7 @@ class PostServiceTest {
             when(postRepository.findById(parentPostId)).thenReturn(Optional.of(parentPost));
 
             // Mock luồng chạy bên trong của hàm createPost(request) được gọi kế tiếp
-            when(userRepository.findByUsername(MOCK_USERNAME)).thenReturn(Optional.of(currentUser));
+            when(userRepository.findById(MOCK_USERID)).thenReturn(Optional.of(currentUser));
             when(postMapper.toPost(any(PostRequest.class))).thenReturn(mockReplyPost);
             when(postRepository.save(any(Post.class))).thenReturn(savedReply);
 
