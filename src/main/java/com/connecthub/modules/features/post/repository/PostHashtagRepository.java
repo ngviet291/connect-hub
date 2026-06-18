@@ -14,12 +14,21 @@ import java.util.UUID;
 public interface PostHashtagRepository extends JpaRepository<PostHashtag, PostHashtag.PostHashtagId> {
 
     @Query("""
-            SELECT DISTINCT ph
+            SELECT COUNT(ph) > 0
             FROM PostHashtag ph
+            WHERE ph.post.id = :postId
+            AND ph.hashtag.id = :hashtagId
+        """)
+    boolean existsByPostIdAndHashtagId(@Param("postId") UUID postId, @Param("hashtagId") UUID hashtagId);
+
+    @Query("""
+            SELECT ph
+            FROM PostHashtag ph
+            JOIN FETCH ph.post p
             WHERE ph.hashtag.id = :hashtagId
-            AND ph.post.isDeleted = false
-            AND (:cursor IS NULL OR ph.post.id < :cursor)
-            ORDER BY ph.post.id DESC
+            AND p.isDeleted = false
+            AND (:cursor IS NULL OR p.id < :cursor)
+            ORDER BY p.id DESC
         """)
     List<PostHashtag> findPostsByHashtagId(@Param("hashtagId") UUID hashtagId,
                                            @Param("cursor") UUID cursor,

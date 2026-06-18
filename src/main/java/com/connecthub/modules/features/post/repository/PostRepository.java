@@ -1,7 +1,6 @@
 package com.connecthub.modules.features.post.repository;
 
 import com.connecthub.modules.features.post.entity.Post;
-import com.connecthub.modules.features.post.enums.Visibility;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,30 +14,6 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<Post, UUID> {
 
     long countByParentPostIdAndIsDeletedFalse(UUID parentPostId);
-
-    @Query("""
-            SELECT p
-            FROM Post p
-            WHERE p.user.id = :userId
-            AND p.isDeleted = false
-            AND (:cursor IS NULL OR p.id < :cursor)
-            ORDER BY p.id DESC
-        """)
-    List<Post> findByUserId(@Param("userId") UUID userId,
-                            @Param("cursor") UUID cursor,
-                            Limit limit);
-
-    @Query("""
-            SELECT p
-            FROM Post p
-            WHERE p.visibility = :visibility
-            AND p.isDeleted = false
-            AND (:cursor IS NULL OR p.id < :cursor)
-            ORDER BY p.id DESC
-        """)
-    List<Post> findByVisibility(@Param("visibility") Visibility visibility,
-                                @Param("cursor") UUID cursor,
-                                Limit limit);
 
     @Query("""
             SELECT p

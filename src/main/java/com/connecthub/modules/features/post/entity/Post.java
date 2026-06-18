@@ -33,6 +33,7 @@ public class Post extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "parent_post_id")
     private Post parentPost;
+    @Column(columnDefinition = "TEXT")
     private String content;
     @ManyToOne
     @JoinColumn(name = "quote_post_id")
