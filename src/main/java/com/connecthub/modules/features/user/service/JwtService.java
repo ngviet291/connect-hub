@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,8 +69,10 @@ public class JwtService {
 
     private String buildScope(User user) {
         if (user.getRoles() != null) {
-            Role userRole = user.getRoles().iterator().next();
-            return userRole.getName().name();
+            return user.getRoles().stream()
+                    .map(Role::getName)
+                    .map(Enum::name)
+                    .collect(Collectors.joining(" "));
         }
         return "";
     }

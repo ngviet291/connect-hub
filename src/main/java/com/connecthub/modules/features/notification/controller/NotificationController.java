@@ -38,7 +38,7 @@ public class NotificationController {
                 .build();
     }
 
-    @PatchMapping("/unread-count")
+    @GetMapping("/unread-count")
     public ApiResponse<NotificationUnreadResponse> unreadCount() {
         return ApiResponse.<NotificationUnreadResponse>builder()
                 .code(NotificationResponseCode.COUNT_UNREAD.getCode())
@@ -50,7 +50,7 @@ public class NotificationController {
     @GetMapping
     public ApiResponse<CursorResponse<NotificationResponse>> getNotification(
             UUID cursor,
-            @Min(1) @Max(100) int size
+           @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         return ApiResponse.<CursorResponse<NotificationResponse>>builder()
                 .data(notificationService.getNotification(cursor, size))

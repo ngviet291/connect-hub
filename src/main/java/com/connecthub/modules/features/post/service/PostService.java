@@ -13,6 +13,7 @@ import com.connecthub.modules.features.post.repository.MentionRepository;
 import com.connecthub.modules.features.post.repository.PostHashtagRepository;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.user.entity.User;
+import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.UnknownServiceException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -157,6 +159,8 @@ public class PostService {
         return createPost(request);
     }
 
+
+    @Transactional(readOnly = true)
     public List<PostResponse> getReplies(UUID postId, UUID cursor, int limit) {
         getPostOrThrow(postId, "Post not found");
 
@@ -214,7 +218,7 @@ public class PostService {
 
     private User getUserOrThrow(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(UserNotFoundException::new);
     }
 
     private Post getPostOrThrow(UUID postId, String errorMessage) {
