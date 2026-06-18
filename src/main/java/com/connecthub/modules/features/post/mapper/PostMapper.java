@@ -10,6 +10,9 @@ import com.connecthub.modules.features.user.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Mapper(componentModel = "spring")
 public interface PostMapper {
 
@@ -36,4 +39,36 @@ public interface PostMapper {
     UserSummaryResponse toUserSummaryResponse(User user);
 
     MediaResponse toMediaResponse(Media media);
+
+    default PostResponse mapToResponse(
+            Post post,
+            List<Media> media,
+            long commentCount,
+            long reactionCount,
+            long repostCount,
+            long bookmarkCount,
+            long viewCount
+    ) {
+        return PostResponse.builder()
+                .id(post.getId())
+                .author(toUserSummaryResponse(post.getUser()))
+                .content(post.getContent())
+                .visibility(post.getVisibility())
+                .parentPostId(post.getParentPost() != null ? post.getParentPost().getId() : null)
+                .quotePostId(post.getQuotePost() != null ? post.getQuotePost().getId() : null)
+                .media(media != null ?
+                        media.stream().map(this::toMediaResponse).collect(Collectors.toList()) :
+                        null)
+                .reactionCount((int) reactionCount)
+                .commentCount((int) commentCount)
+                .repostCount((int) repostCount)
+                .bookmarkCount((int) bookmarkCount)
+                .viewCount((int) viewCount)
+                .reacted(false) // TODO: Check if current user reacted
+                .bookmarked(false) // TODO: Check if current user bookmarked
+                .reposted(false) // TODO: Check if current user reposted
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .build();
+    }
 }
