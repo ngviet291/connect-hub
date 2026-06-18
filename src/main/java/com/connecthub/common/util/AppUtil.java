@@ -57,4 +57,14 @@ public class AppUtil {
     public static UUID generateUUID() {
         return UuidCreator.getTimeOrderedEpoch();
     }
+
+    public static UUID userIdFormAuthentication(){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthenticatedException();
+        }
+
+        return UUID.fromString(authentication.getName());
+    }
 }

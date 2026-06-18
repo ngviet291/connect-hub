@@ -46,12 +46,13 @@ class NotificationServiceTest {
 
     private MockedStatic<AppUtil> mockedAppUtil;
     private final String MOCK_USERNAME = "test_user";
+    private final UUID MOCK_USER_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         // Mock static AppUtil để luôn trả về MOCK_USERNAME khi test chạy
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::usernameFromAuthentication).thenReturn(MOCK_USERNAME);
+        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(MOCK_USER_ID);
     }
 
     @AfterEach
@@ -75,7 +76,7 @@ class NotificationServiceTest {
             notification.setId(notificationId);
             notification.setRead(false);
 
-            when(notificationRepository.findByIdAndRecipientUsername(notificationId, MOCK_USERNAME))
+            when(notificationRepository.findByIdAndRecipientId(notificationId, MOCK_USER_ID))
                     .thenReturn(Optional.of(notification));
 
             // Call
@@ -84,7 +85,7 @@ class NotificationServiceTest {
             // Assert & Verify
             assertTrue(notification.isRead());
             verify(notificationRepository, times(1))
-                    .findByIdAndRecipientUsername(notificationId, MOCK_USERNAME);
+                    .findByIdAndRecipientId(notificationId, MOCK_USER_ID);
         }
 
         @Test
@@ -92,13 +93,13 @@ class NotificationServiceTest {
         void read_NotFound_ThrowsException() {
             UUID notificationId = UUID.randomUUID();
 
-            when(notificationRepository.findByIdAndRecipientUsername(notificationId, MOCK_USERNAME))
+            when(notificationRepository.findByIdAndRecipientId(notificationId, MOCK_USER_ID))
                     .thenReturn(Optional.empty());
 
             // Call & Assert
             assertThrows(NotificationNotFoundException.class, () -> notificationService.read(notificationId));
             verify(notificationRepository, times(1))
-                    .findByIdAndRecipientUsername(notificationId, MOCK_USERNAME);
+                    .findByIdAndRecipientId(notificationId, MOCK_USER_ID);
         }
     }
 
@@ -117,7 +118,7 @@ class NotificationServiceTest {
 
             // Verify
             verify(notificationRepository, times(1))
-                    .markAsReadAllByIdAndRecipientUsername(MOCK_USERNAME);
+                    .markAsReadAllByIdAndRecipientId(MOCK_USER_ID);
         }
     }
 
@@ -132,7 +133,7 @@ class NotificationServiceTest {
         @DisplayName("Thành công - Trả về số lượng thông báo chưa đọc đúng")
         void countUnread_Success() {
             long expectedCount = 5L;
-            when(notificationRepository.countUnreadByRecipientUsername(MOCK_USERNAME)).thenReturn(expectedCount);
+            when(notificationRepository.countUnreadByRecipientIdAndIsReadFalse(MOCK_USER_ID)).thenReturn(expectedCount);
 
             // Call
             NotificationUnreadResponse response = notificationService.countUnread();
@@ -140,7 +141,7 @@ class NotificationServiceTest {
             // Assert
             assertNotNull(response);
             assertEquals(expectedCount, response.getUnreadCount());
-            verify(notificationRepository, times(1)).countUnreadByRecipientUsername(MOCK_USERNAME);
+            verify(notificationRepository, times(1)).countUnreadByRecipientIdAndIsReadFalse(MOCK_USER_ID);
         }
     }
 
@@ -158,7 +159,7 @@ class NotificationServiceTest {
             int size = 5;
 
             // Mock DB trả về rỗng
-            when(notificationRepository.findByRecipientUsername(eq(MOCK_USERNAME), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
                     .thenReturn(Collections.emptyList());
 
             // Call
@@ -184,7 +185,7 @@ class NotificationServiceTest {
             NotificationResponse res1 = new NotificationResponse();
             NotificationResponse res2 = new NotificationResponse();
 
-            when(notificationRepository.findByRecipientUsername(eq(MOCK_USERNAME), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
                     .thenReturn(mockDbResult);
             when(notificationMapper.toNotificationResponse(n1)).thenReturn(res1);
             when(notificationMapper.toNotificationResponse(n2)).thenReturn(res2);
@@ -197,7 +198,7 @@ class NotificationServiceTest {
             assertEquals(2, response.getContent().size());
             assertFalse(response.isHasNext());
             assertEquals(n2.getId().toString(), response.getNextCursor()); // Phần tử cuối làm cursor
-            verify(notificationRepository).findByRecipientUsername(MOCK_USERNAME, cursor, Limit.of(size + 1));
+            verify(notificationRepository).findByRecipientId(MOCK_USER_ID, cursor, Limit.of(size + 1));
         }
 
         @Test
@@ -216,7 +217,7 @@ class NotificationServiceTest {
             NotificationResponse res1 = new NotificationResponse();
             NotificationResponse res2 = new NotificationResponse();
 
-            when(notificationRepository.findByRecipientUsername(eq(MOCK_USERNAME), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
                     .thenReturn(mockDbResult);
             when(notificationMapper.toNotificationResponse(n1)).thenReturn(res1);
             when(notificationMapper.toNotificationResponse(n2)).thenReturn(res2);

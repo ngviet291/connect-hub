@@ -21,6 +21,6 @@ public class NotificationResponse {
     private NotificationType type;
     private PostSummaryResponse post;
     private UserSummaryResponse user;
-    private boolean isRead;
+    private boolean read;
     private LocalDateTime createdAt;
 }

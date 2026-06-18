@@ -2,7 +2,6 @@ package com.connecthub.modules.features.notification.repository;
 
 import com.connecthub.modules.features.notification.entity.Notification;
 import org.springframework.data.domain.Limit;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,26 +13,26 @@ import java.util.UUID;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
-    Long countUnreadByRecipientUsername(String username);
+    Long countUnreadByRecipientIdAndIsReadFalse(UUID recipientId);
 
 
-    Optional<Notification> findByIdAndRecipientUsername(UUID id, String recipientUsername);
+    Optional<Notification> findByIdAndRecipientId(UUID id, UUID recipientId);
 
     @Modifying
     @Query("""
             UPDATE Notification n
             SET n.isRead = true
-            WHERE n.recipient.username = :recipientUsername
+            WHERE n.recipient.id = :recipientId
     """)
-    void markAsReadAllByIdAndRecipientUsername(String recipientUsername);
+    void markAsReadAllByIdAndRecipientId(UUID recipientId);
 
 
     @Query("""
             SELECT n
             FROM Notification n
-            WHERE n.recipient.username = :username
+            WHERE n.recipient.id = :recipientId
             AND (:cursor IS NULL OR n.id < :cursor)
             ORDER BY n.id DESC
         """)
-    List<Notification> findByRecipientUsername(String username, UUID cursor, Limit limit);
+    List<Notification> findByRecipientId(UUID recipientId, UUID cursor, Limit limit);
 }
