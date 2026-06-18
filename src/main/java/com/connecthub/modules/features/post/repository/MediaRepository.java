@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface MediaRepository extends JpaRepository<Media, UUID> {
-    long countByPost_Id(UUID postId);
+    long countByPostId(UUID postId);
 
-    List<Media> findByPost_Id(UUID postId);
+    List<Media> findByPostId(UUID postId);
 }

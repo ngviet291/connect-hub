@@ -1,7 +1,11 @@
 package com.connecthub.modules.features.post.exception;
 
-public class MentionedUserNotFoundException extends RuntimeException {
-    public MentionedUserNotFoundException(java.util.UUID userId) {
+import com.connecthub.common.exception.AppException;
+
+import java.util.UUID;
+
+public class MentionedUserNotFoundException extends AppException {
+    public MentionedUserNotFoundException(UUID userId) {
         super("Mentioned user not found: " + userId);
     }
 }
