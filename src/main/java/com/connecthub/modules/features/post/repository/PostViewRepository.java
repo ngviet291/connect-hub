@@ -9,4 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface PostViewRepository extends JpaRepository<PostView, UUID> {
+    long countByPost_Id(UUID postId);
 }

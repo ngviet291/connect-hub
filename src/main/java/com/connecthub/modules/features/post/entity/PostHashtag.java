@@ -16,11 +16,12 @@ import java.util.UUID;
 @Table(name = "post_hashtags")
 public class PostHashtag {
     @Id
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hashtag_id")
     private Hashtag hashtag;
+
     @Id
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 

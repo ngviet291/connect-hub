@@ -26,6 +26,7 @@ public class Message extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User sender;
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @OneToMany(mappedBy = "message")

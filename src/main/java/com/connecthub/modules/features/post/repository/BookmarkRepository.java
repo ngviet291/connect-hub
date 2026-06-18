@@ -11,4 +11,5 @@ import java.util.UUID;
 
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark, UUID > {
+    long countByPost_Id(UUID postId);
 }
