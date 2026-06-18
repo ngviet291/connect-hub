@@ -103,32 +103,14 @@ public class GlobalExceptionHandler {
         return message;
     }
 
-    private String mapAttributes(String message, Map<String, String> attributes) {
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            message = mapAttribute(message, entry.getKey(), entry.getValue());
+    private String mapAttributes(String message, Map<String , Object> attributes) {
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            message = mapAttribute(message, entry.getKey(), entry.getValue().toString());
         }
         return message;
     }
 
-    @ExceptionHandler(DuplicateException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateException ex, HttpServletRequest request) {
 
-        String message = ex.getErrorCode().getMessage();
-
-        if (Objects.nonNull(ex.getKeyAttribute()) && Objects.nonNull(ex.getAttributeValue())) {
-            message = mapAttribute(message, ex.getKeyAttribute(), ex.getAttributeValue());
-        }
-        ErrorResponse response = ErrorResponse.builder()
-                .status(ex.getErrorCode().getStatusCode().value())
-                .message(HttpStatus.valueOf(ex.getErrorCode().getStatusCode().value()).getReasonPhrase())
-                .timestamp(LocalDateTime.now())
-                .error(message)
-                .path(request.getRequestURI())
-                .build();
-
-        return ResponseEntity
-                .status(ex.getErrorCode().getStatusCode()).body(response);
-    }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
@@ -168,6 +150,25 @@ public class GlobalExceptionHandler {
 
             return ResponseEntity.status(errorCode.getStatusCode()).body(response);
 
+    }
+
+    @ExceptionHandler(ParameterizedException.class)
+    public ResponseEntity<ErrorResponse> handleParameterizedException(ParameterizedException e, HttpServletRequest request) {
+
+        String message = e.getErrorCode().getMessage();
+
+       Map<String, Object> parameters = e.getParameters();
+       message = mapAttributes(message, parameters);
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(e.getErrorCode().getStatusCode().value())
+                .error(HttpStatus.valueOf(e.getErrorCode().getStatusCode().value()).getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(e.getErrorCode().getStatusCode()).body(response);
     }
 
 }
