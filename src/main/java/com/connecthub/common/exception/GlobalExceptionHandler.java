@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
         return message;
     }
 
-    private String mapAttributes(String message, Map<String , Object> attributes) {
+    private String mapAttributes(String message, Map<String, Object> attributes) {
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             message = mapAttribute(message, entry.getKey(), entry.getValue().toString());
         }
@@ -111,44 +111,43 @@ public class GlobalExceptionHandler {
     }
 
 
-
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
-            ErrorCode errorCode = ErrorCode.INVALID_PARAMETER_TYPE;
-            String message = e.getMessage();
+        ErrorCode errorCode = ErrorCode.INVALID_PARAMETER_TYPE;
+        String message = e.getMessage();
 
 
-            Class<?> errorTypeClass = e.getRequiredType();
+        Class<?> errorTypeClass = e.getRequiredType();
 
-            Set<Class<?>> NUMBER_TYPES = Set.of(
-                    Byte.class, Short.class, Integer.class, Long.class,
-                    Float.class, Double.class,
-                    byte.class, short.class, int.class, long.class,
-                    float.class, double.class
-            );
-            if (errorTypeClass == null) {
-                errorTypeClass = e.getParameter().getParameterType();
-            }
+        Set<Class<?>> NUMBER_TYPES = Set.of(
+                Byte.class, Short.class, Integer.class, Long.class,
+                Float.class, Double.class,
+                byte.class, short.class, int.class, long.class,
+                float.class, double.class
+        );
+        if (errorTypeClass == null) {
+            errorTypeClass = e.getParameter().getParameterType();
+        }
 
-            if (errorTypeClass == LocalDate.class) {
-                errorCode = ErrorCode.INVALID_DATE_FORMAT;
-            } else if (NUMBER_TYPES.contains(errorTypeClass)) {
-                errorCode = ErrorCode.INVALID_NUMBER_FORMAT;
-            }
+        if (errorTypeClass == LocalDate.class) {
+            errorCode = ErrorCode.INVALID_DATE_FORMAT;
+        } else if (NUMBER_TYPES.contains(errorTypeClass)) {
+            errorCode = ErrorCode.INVALID_NUMBER_FORMAT;
+        }
 
-            if (e.getValue() != null) {
-                message = String.format("Invalid value '%s' for parameter '%s' must be a %s", e.getValue(), e.getName(), errorTypeClass.getSimpleName());
-            }
+        if (e.getValue() != null) {
+            message = String.format("Invalid value '%s' for parameter '%s' must be a %s", e.getValue(), e.getName(), errorTypeClass.getSimpleName());
+        }
 
-            ErrorResponse response = ErrorResponse.builder()
-                    .timestamp(LocalDateTime.now())
-                    .status(errorCode.getStatusCode().value())
-                    .error(HttpStatus.valueOf(errorCode.getStatusCode().value()).getReasonPhrase())
-                    .message(message)
-                    .path(request.getRequestURI())
-                    .build();
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(errorCode.getStatusCode().value())
+                .error(HttpStatus.valueOf(errorCode.getStatusCode().value()).getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
 
-            return ResponseEntity.status(errorCode.getStatusCode()).body(response);
+        return ResponseEntity.status(errorCode.getStatusCode()).body(response);
 
     }
 
@@ -157,8 +156,10 @@ public class GlobalExceptionHandler {
 
         String message = e.getErrorCode().getMessage();
 
-       Map<String, Object> parameters = e.getParameters();
-       message = mapAttributes(message, parameters);
+        Map<String, Object> parameters = e.getParameters();
+        if (parameters != null && !parameters.isEmpty()) {
+            message = mapAttributes(message, parameters);
+        }
 
         ErrorResponse response = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
