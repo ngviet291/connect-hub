@@ -19,6 +19,6 @@ public interface UserMapper {
 
     // Update existing User entity from UserUpdateRequest
     void updateUserFromRequest(UserUpdateRequest request, @MappingTarget User user);
-    @Mapping(target = "verified", constant = "false")
+   // @Mapping(target = "verified", constant = "false")
     UserSummaryResponse toUserSummaryResponse(User user);
 }
