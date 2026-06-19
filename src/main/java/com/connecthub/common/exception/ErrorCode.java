@@ -25,11 +25,14 @@ public enum ErrorCode {
     DUPLICATE_PHONE( "Phone number {phone} already exists", HttpStatus.CONFLICT),
     BAD_CREDENTIALS( "Bad credentials", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED),
-    CONFLICT_USER( "Conflict User", HttpStatus.CONFLICT),
-
-    NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND)
 
 
+    NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND),
+    HASHTAG_NOT_FOUND( "Hashtag not found", HttpStatus.NOT_FOUND),
+    MENTIONED_USER_NOT_FOUND( "Mentioned user not found", HttpStatus.NOT_FOUND),
+    POST_ACCESS_DENIED( "Access denied to the post", HttpStatus.FORBIDDEN),
+    CONFLICT_USERNAME( "Username already exists", HttpStatus.CONFLICT),
+    POST_NOT_FOUND( "Post not found", HttpStatus.NOT_FOUND)
 
     ;
 

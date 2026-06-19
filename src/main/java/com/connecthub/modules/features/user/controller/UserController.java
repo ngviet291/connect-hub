@@ -4,6 +4,7 @@ import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
+import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
 import com.connecthub.modules.features.user.dto.response.UserStatsResponse;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
@@ -36,6 +37,7 @@ public class UserController {
 
     private final UserService userService;
 
+    // ADMIN ONLY
     @GetMapping("/{id}")
     public ApiResponse<UserResponse> getUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
@@ -44,8 +46,15 @@ public class UserController {
                 .data(userService.getUserById(id))
                 .build();
     }
-
-
+    @GetMapping
+    public ApiResponse<UserResponse> getUser() {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.GET_USER_SUCCESS.getCode())
+                .message(UserResponseCode.GET_USER_SUCCESS.getMessage())
+                .data(userService.getUserById())
+                .build();
+    }
+    // ADMIN
     @GetMapping("/{id}/followers")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowers(
             @PathVariable UUID id,
@@ -58,7 +67,20 @@ public class UserController {
                 .data(userService.getFollowers(id, cursor, size))
                 .build();
     }
+    // USER
+    @GetMapping("/followers")
+    public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowers(
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") @Min(3) @Max(100) int size
+    ) {
+        return ApiResponse.<CursorResponse<UserSummaryResponse>>builder()
+                .code(UserResponseCode.GET_USER_FOLLOWERS_SUCCESS.getCode())
+                .message(UserResponseCode.GET_USER_FOLLOWERS_SUCCESS.getMessage())
+                .data(userService.getFollowers(cursor, size))
+                .build();
+    }
 
+    // ADMIN
     @GetMapping("/{id}/following")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowing(
             @PathVariable UUID id,
@@ -71,23 +93,35 @@ public class UserController {
                 .data(userService.getFollowing(id, cursor, size))
                 .build();
     }
+    // USER
+    @GetMapping("/following")
+    public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowing(
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+    ) {
+        return ApiResponse.<CursorResponse<UserSummaryResponse>>builder()
+                .code(UserResponseCode.GET_USER_FOLLOWING_SUCCESS.getCode())
+                .message(UserResponseCode.GET_USER_FOLLOWING_SUCCESS.getMessage())
+                .data(userService.getFollowing(cursor, size))
+                .build();
+    }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{id}/follow")
-    public ApiResponse<Void> follow(@PathVariable UUID id) {
-        userService.followUser(id);
-        return ApiResponse.<Void>builder()
+    public ApiResponse<FollowResponse> follow(@PathVariable UUID id) {
+        return ApiResponse.<FollowResponse>builder()
                 .code(UserResponseCode.FOLLOW_USER_SUCCESS.getCode())
                 .message(UserResponseCode.FOLLOW_USER_SUCCESS.getMessage())
+                .data(userService.followUser(id))
                 .build();
     }
 
     @DeleteMapping("/{id}/unfollow")
-    public ApiResponse<Void> unfollow(@PathVariable UUID id) {
-        userService.unfollowUser(id);
-        return ApiResponse.<Void>builder()
+    public ApiResponse<FollowResponse> unfollow(@PathVariable UUID id) {
+        return ApiResponse.<FollowResponse>builder()
                 .code(UserResponseCode.UNFOLLOW_USER_SUCCESS.getCode())
                 .message(UserResponseCode.UNFOLLOW_USER_SUCCESS.getMessage())
+                .data(userService.unfollowUser(id))
                 .build();
     }
 
@@ -114,6 +148,16 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/stats")
+    public ApiResponse<UserStatsResponse> getStats() {
+        return ApiResponse.<UserStatsResponse>builder()
+                .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
+                .message(UserResponseCode.GET_USER_STATS_SUCCESS.getMessage())
+                .data(userService.getStats())
+                .build();
+    }
+
+    // ADMIN
     @GetMapping("/{id}/stats")
     public ApiResponse<UserStatsResponse> getStats(@PathVariable UUID id) {
         return ApiResponse.<UserStatsResponse>builder()

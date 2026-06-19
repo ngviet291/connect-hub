@@ -5,6 +5,6 @@ import com.connecthub.common.exception.ErrorCode;
 
 public class ConflictUserException extends AppException {
     public ConflictUserException( ) {
-        super(ErrorCode.CONFLICT_USER);
+        super(ErrorCode.CONFLICT_USERNAME);
     }
 }

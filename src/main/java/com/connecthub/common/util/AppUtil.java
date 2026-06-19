@@ -61,14 +61,23 @@ public class AppUtil {
         return UuidCreator.getTimeOrderedEpoch();
     }
 
-    public static UUID userIdFormAuthentication(){
+    public static UUID userIdFormAuthentication() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new UnauthenticatedException();
         }
 
-        return UUID.fromString(authentication.getName());
+        String principal = authentication.getName();
+        if (principal == null || principal.isBlank()) {
+            throw new UnauthenticatedException();
+        }
+
+        try {
+            return UUID.fromString(principal);
+        } catch (IllegalArgumentException ex) {
+            throw new UnauthenticatedException();
+        }
     }
     public static <T, R> CursorResponse<R> buildCursorResponse(
             List<T> items,

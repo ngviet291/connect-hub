@@ -40,4 +40,24 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
 			ORDER BY f.id DESC
 	""")
     List<Follow> findFollowing(UUID userId, UUID cursor, Limit limit);
-}
+
+    // Optimized queries with JOIN FETCH to avoid N+1 problem
+    @Query("""
+        SELECT DISTINCT f
+        FROM Follow f
+        LEFT JOIN FETCH f.follower
+        WHERE f.following.id = :userId
+        AND (:cursor IS NULL OR f.id < :cursor)
+        ORDER BY f.id DESC
+    """)
+    List<Follow> findFollowersOptimized(UUID userId, UUID cursor, Limit limit);
+
+    @Query("""
+        SELECT DISTINCT f
+        FROM Follow f
+        LEFT JOIN FETCH f.following
+        WHERE f.follower.id = :userId
+        AND (:cursor IS NULL OR f.id < :cursor)
+        ORDER BY f.id DESC
+    """)
+    List<Follow> findFollowingOptimized(UUID userId, UUID cursor, Limit limit);}
