@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.chat.entity;
 
 import com.connecthub.common.entity.BaseEntity;
+import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,6 +27,10 @@ public class ConversationMember extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
     private LocalDateTime joinedAt;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private MemberStatus status = MemberStatus.PENDING;  // mặc định PENDING
+
 
 
     @Data

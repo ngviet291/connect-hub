@@ -23,4 +23,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, UUID id);
 
     boolean existsByEmailAndIdNot(String email, UUID id);
+
+     boolean existsByUsernameAndIdNot(String username, UUID id);
+
+     @Query("SELECT u FROM User u WHERE u.id = :id AND u.isActive = true")
+     Optional<User> findActiveById(UUID id);
+
 }

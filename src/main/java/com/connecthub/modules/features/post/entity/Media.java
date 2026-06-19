@@ -24,6 +24,7 @@ public class Media extends BaseEntity {
     @JoinColumn(name = "post_id")
     private Post post;
     private String url;
+    private String publicAvtId;
     @Enumerated(EnumType.STRING)
     private MediaType type;
     private BigInteger size;

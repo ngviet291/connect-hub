@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -134,6 +135,15 @@ public class UserController {
                 .code(UserResponseCode.UPDATE_USER_SUCCESS.getCode())
                 .message(UserResponseCode.UPDATE_USER_SUCCESS.getMessage())
                 .data(userService.updateUser(request))
+                .build();
+    }
+
+    @PutMapping(value = "/avatar", consumes = "multipart/form-data")
+    public ApiResponse<UserResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.UPDATE_USER_SUCCESS.getCode())
+                .message(UserResponseCode.UPDATE_USER_SUCCESS.getMessage())
+                .data(userService.uploadAvatar(file))
                 .build();
     }
 
