@@ -57,8 +57,8 @@ public class PostService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public PostResponse createPost(PostRequest request) {
-        String username = AppUtil.usernameFromAuthentication();
-        User user = getUserOrThrow(username);
+        UUID userId = AppUtil.userIdFormAuthentication();
+        User user = getUserOrThrow(userId);
 
         Post post = postMapper.toPost(request);
         post.setId(AppUtil.generateUUID());
@@ -83,7 +83,7 @@ public class PostService {
             addMentionsToPost(savedPost, request.getMentionUserIds());
         }
 
-        log.info("Post created: {} by user: {}", savedPost.getId(), username);
+        log.info("Post created: {} by user: {}", savedPost.getId(), userId);
         return mapToResponse(savedPost);
     }
 
@@ -101,8 +101,8 @@ public class PostService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public PostResponse updatePost(UUID postId, PostRequest request) {
-        String username = AppUtil.usernameFromAuthentication();
-        Post post = getOwnedPostOrThrow(postId, username, "update");
+        java.util.UUID userId = AppUtil.userIdFormAuthentication();
+        Post post = getOwnedPostOrThrow(postId, userId, "update");
 
         if (post.isDeleted()) {
             throw new PostNotFoundException("Cannot update a deleted post");
@@ -112,43 +112,21 @@ public class PostService {
         post.setVisibility(request.getVisibility());
 
         Post updatedPost = postRepository.save(post);
-        log.info("Post updated: {} by user: {}", postId, username);
+        log.info("Post updated: {} by user: {}", postId, userId);
         return mapToResponse(updatedPost);
     }
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public void deletePost(UUID postId) {
-        String username = AppUtil.usernameFromAuthentication();
-        Post post = getOwnedPostOrThrow(postId, username, "delete");
+        java.util.UUID userId = AppUtil.userIdFormAuthentication();
+        Post post = getOwnedPostOrThrow(postId, userId, "delete");
 
         post.setDeleted(true);
         postRepository.save(post);
-        log.info("Post deleted: {} by user: {}", postId, username);
+        log.info("Post deleted: {} by user: {}", postId, userId);
     }
 
-    private <T, R> CursorResponse<R> buildCursorResponse(
-            List<T> items,
-            int size,
-            Function<T, UUID> cursorExtractor,
-            Function<T, R> mapper
-    ) {
-        boolean hasNext = items.size() > size;
-
-        if (hasNext) {
-            items.removeLast();
-        }
-
-        UUID nextCursor = items.isEmpty()
-                ? null
-                : cursorExtractor.apply(items.getLast());
-
-        return CursorResponse.<R>builder()
-                .content(items.stream().map(mapper).toList())
-                .nextCursor(nextCursor == null ? null : nextCursor.toString())
-                .hasNext(hasNext)
-                .build();
-    }
 
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getUserFeed(UUID cursor, int size) {
@@ -156,7 +134,7 @@ public class PostService {
                 postRepository.findPublicFeed(cursor, Limit.of(size + 1))
         );
 
-        return buildCursorResponse(
+        return AppUtil.buildCursorResponse(
                 feed,
                 size,
                 Post::getId,
@@ -167,7 +145,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getPostsByHashtag(String hashtag, UUID cursor, int size) {
         Hashtag hashtagEntity = hashtagRepository.findByName(hashtag)
-                .orElseThrow(HashtagNotFoundException::new);
+                .orElseThrow(() -> new HashtagNotFoundException(hashtag));
 
         List<PostHashtag> postHashtags = new ArrayList<>(
                 postHashtagRepository.findPostsByHashtagId(
@@ -177,7 +155,7 @@ public class PostService {
                 )
         );
 
-        return buildCursorResponse(
+        return AppUtil.buildCursorResponse(
                 postHashtags,
                 size,
                 ph -> ph.getPost().getId(),
@@ -208,7 +186,7 @@ public class PostService {
                 postRepository.findRepliesByParentPostId(postId, cursor, Limit.of(size + 1))
         );
 
-        return buildCursorResponse(
+        return AppUtil.buildCursorResponse(
                 replies,
                 size,
                 Post::getId,
@@ -271,8 +249,8 @@ public class PostService {
         }
     }
 
-    private User getUserOrThrow(String username) {
-        return userRepository.findByUsername(username)
+    private User getUserOrThrow(UUID uuid) {
+        return userRepository.findById(uuid)
                 .orElseThrow(UserNotFoundException::new);
     }
 
@@ -281,8 +259,8 @@ public class PostService {
                 .orElseThrow(PostNotFoundException::new);
     }
 
-    private Post getOwnedPostOrThrow(UUID postId, String username, String action) {
-        User user = getUserOrThrow(username);
+    private Post getOwnedPostOrThrow(UUID postId, UUID uuid, String action) {
+        User user = getUserOrThrow(uuid);
         Post post = getPostOrThrow(postId);
 
         if (!post.getUser().getId().equals(user.getId())) {

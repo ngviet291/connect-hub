@@ -36,7 +36,7 @@ public class JwtService {
     private String ISSUER;
 
     private static final String SCOPE_CLAIM = "scope";
-
+    private static final String USERNAME_CLAIM = "username";
     private final RefreshTokenService refreshTokenService;
 
 
@@ -46,7 +46,8 @@ public class JwtService {
                 .build();
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getUsername())
+                .subject(user.getId().toString())
+                .claim(USERNAME_CLAIM, user.getUsername())
                 .issuer(ISSUER)
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))

@@ -2,14 +2,12 @@ package com.connecthub.common.exception;
 
 import lombok.Getter;
 
+import java.util.Map;
+
 @Getter
-public class DuplicateException extends AppException {
-    private final String keyAttribute;
-    private final String attributeValue;
+public class DuplicateException extends ParameterizedException {
 
     public DuplicateException(ErrorCode errorCode, String keyAttribute, String attributeValue) {
-        super(errorCode);
-        this.keyAttribute = keyAttribute;
-        this.attributeValue = attributeValue;
+        super(errorCode, Map.of(keyAttribute, attributeValue));
     }
 }

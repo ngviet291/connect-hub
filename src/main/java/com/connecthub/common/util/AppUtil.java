@@ -1,5 +1,6 @@
 package com.connecthub.common.util;
 
+import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.exception.AppException;
 import com.connecthub.common.exception.ErrorCode;
@@ -12,7 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 
 public class AppUtil {
@@ -56,5 +59,37 @@ public class AppUtil {
 
     public static UUID generateUUID() {
         return UuidCreator.getTimeOrderedEpoch();
+    }
+
+    public static UUID userIdFormAuthentication(){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthenticatedException();
+        }
+
+        return UUID.fromString(authentication.getName());
+    }
+    public static <T, R> CursorResponse<R> buildCursorResponse(
+            List<T> items,
+            int size,
+            Function<T, UUID> cursorExtractor,
+            Function<T, R> mapper
+    ) {
+        boolean hasNext = items.size() > size;
+
+        if (hasNext) {
+            items.removeLast();
+        }
+
+        UUID nextCursor = items.isEmpty()
+                ? null
+                : cursorExtractor.apply(items.getLast());
+
+        return CursorResponse.<R>builder()
+                .content(items.stream().map(mapper).toList())
+                .nextCursor(nextCursor == null ? null : nextCursor.toString())
+                .hasNext(hasNext)
+                .build();
     }
 }

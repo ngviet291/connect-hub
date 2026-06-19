@@ -2,9 +2,16 @@ package com.connecthub.modules.features.post.exception;
 
 import com.connecthub.common.exception.AppException;
 import com.connecthub.common.exception.ErrorCode;
+import com.connecthub.common.exception.ParameterizedException;
 
-public class PostAccessDeniedException extends AppException {
+import java.util.Map;
+
+public class PostAccessDeniedException extends ParameterizedException {
+    private static final String ACTION = "action";
     public PostAccessDeniedException(String action) {
-        super("Access denied to " + action + " this post");
+        super(
+                ErrorCode.POST_ACCESS_DENIED,
+                Map.of(ACTION, action)
+        );;
     }
 }
