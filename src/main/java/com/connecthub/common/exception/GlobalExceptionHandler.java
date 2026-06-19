@@ -1,6 +1,7 @@
 package com.connecthub.common.exception;
 
 import com.connecthub.common.dto.response.ErrorResponse;
+import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.user.exception.DuplicateEmailException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -172,4 +174,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(e.getErrorCode().getStatusCode()).body(response);
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e, HttpServletRequest request) {
+
+        ErrorCode errorCode = ErrorCode.FILE_SIZE_EXCEEDED;
+
+        ErrorResponse errorResponse = AppUtil.generateErrorResponse(request, errorCode);
+
+        return ResponseEntity.status(errorCode.getStatusCode()).body(errorResponse);
+
+    }
 }

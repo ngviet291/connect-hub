@@ -41,6 +41,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String phoneNumber;
     private String avatarUrl;
+    private String publicAvtId;
     private String bio;
 
     @Builder.Default

@@ -20,10 +20,10 @@ public class Message extends BaseEntity {
     @Id
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id")
     private Conversation conversation;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User sender;
     @Column(columnDefinition = "TEXT")

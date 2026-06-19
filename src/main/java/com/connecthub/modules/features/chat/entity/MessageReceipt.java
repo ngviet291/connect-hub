@@ -16,11 +16,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "message_media")
+@Table(name = "message_receipts")
 public class MessageReceipt extends BaseEntity {
     @Id
     private UUID id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "message_id")
     private Message message;
     @ManyToOne
