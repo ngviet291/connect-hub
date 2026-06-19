@@ -17,18 +17,7 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     Optional<Follow> findByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
 
     boolean existsByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
-    @Query("""
-    SELECT new com.connecthub.modules.features.social.dto.FollowStats(
-        COUNT(DISTINCT follower.id),
-        COUNT(DISTINCT following.id)
-    )
-    FROM User u
-    LEFT JOIN u.followers follower   
-    LEFT JOIN u.following following  
-    WHERE u.id = :userId
-    GROUP BY u.id
-""")
-    FollowStats countFollowStats(UUID userId);
+
 
     void deleteByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
 

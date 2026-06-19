@@ -323,11 +323,10 @@ public class UserService {
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
         }
+        FollowStats stats =userRepository.countFollowStats(userId);
+        return stats != null ? stats : new FollowStats(0L, 0L);
 
-        return FollowStats.builder()
-                .followersCount(followRepository.countFollowStats(userId).getFollowersCount())
-                .followingCount(followRepository.countFollowStats(userId).getFollowingCount())
-                .build();
+
     }
 
 }
