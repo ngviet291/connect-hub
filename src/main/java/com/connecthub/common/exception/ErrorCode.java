@@ -32,7 +32,8 @@ public enum ErrorCode {
     MENTIONED_USER_NOT_FOUND( "Mentioned user not found", HttpStatus.NOT_FOUND),
     POST_ACCESS_DENIED( "Access denied to the post", HttpStatus.FORBIDDEN),
     UPLOAD_MEDIA_FAILED("Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
-    POST_NOT_FOUND( "Post not found", HttpStatus.NOT_FOUND)
+    POST_NOT_FOUND( "Post not found", HttpStatus.NOT_FOUND),
+    FILE_NOT_FOUND( "File not found", HttpStatus.NOT_FOUND)
 
     ;
 

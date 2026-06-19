@@ -6,7 +6,7 @@ import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
+import  com.connecthub.modules.features.social.dto.FollowStats;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,11 +18,16 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
     boolean existsByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
     @Query("""
-        SELECT new com.connecthub.modules.features.social.dto.FollowStats(
-            (SELECT COUNT(f) FROM Follow f WHERE f.following.id = :userId),
-            (SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :userId)
-        )
-    """)
+    SELECT new com.connecthub.modules.features.social.dto.FollowStats(
+        COUNT(DISTINCT follower.id),
+        COUNT(DISTINCT following.id)
+    )
+    FROM User u
+    LEFT JOIN u.followers follower   
+    LEFT JOIN u.following following  
+    WHERE u.id = :userId
+    GROUP BY u.id
+""")
     FollowStats countFollowStats(UUID userId);
 
     void deleteByFollowerIdAndFollowingId(UUID followerId, UUID followingId);

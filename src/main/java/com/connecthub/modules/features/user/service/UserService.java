@@ -5,13 +5,14 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.notification.entity.Notification;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
+import com.connecthub.modules.features.social.dto.FollowStats;
 import com.connecthub.modules.features.social.entity.Follow;
 import com.connecthub.modules.features.social.repository.FollowRepository;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
-import com.connecthub.modules.features.user.dto.response.UserStatsResponse;
+
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.enums.UserStatus;
@@ -261,14 +262,14 @@ public class UserService {
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
-    public UserStatsResponse getStats() {
+    public FollowStats getStats() {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
         return buildUserStats(currentUserId);
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Transactional(readOnly = true)
-    public UserStatsResponse getStats(UUID userId) {
+    public FollowStats getStats(UUID userId) {
         return buildUserStats(userId);
     }
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -317,13 +318,13 @@ public class UserService {
                 .build();
     }
 
-    private UserStatsResponse buildUserStats(UUID userId) {
+    private FollowStats buildUserStats(UUID userId) {
         // kiểm tra user tồn tại trước khi đếm để tránh trả về 0 cho user không tồn tại
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
         }
 
-        return UserStatsResponse.builder()
+        return FollowStats.builder()
                 .followersCount(followRepository.countFollowStats(userId).getFollowersCount())
                 .followingCount(followRepository.countFollowStats(userId).getFollowingCount())
                 .build();
