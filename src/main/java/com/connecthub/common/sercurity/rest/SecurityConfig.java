@@ -44,6 +44,10 @@ public class SecurityConfig {
             "/v1/reviews/**",
     };
 
+    private static final String[] PUBLIC_ENDPOINTS_HANDSHAKE = {
+            "/api/ws/**", "/api/ws", "/ws/**", "/ws"
+    };
+
 
     private final CustomJwtDecoder customJwtDecoder;
 
@@ -57,8 +61,12 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS_POST).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_ENDPOINTS_GET).permitAll()
+                        .requestMatchers(PUBLIC_ENDPOINTS_HANDSHAKE).permitAll()
                         .anyRequest().authenticated()
         );
+
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/ws/**", "/api/ws/**").disable());
+
 
         http.oauth2ResourceServer(oauth2 ->
                 oauth2.jwt(jwtConfigurer -> jwtConfigurer
@@ -87,7 +95,7 @@ public class SecurityConfig {
         return converter;
     }
 
-    @Value("${app.cors.allowed-origins:*}")
+    @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
     @Bean
@@ -102,6 +110,7 @@ public class SecurityConfig {
         // Nếu ở Production bạn cần dùng Cookie hoặc JWT Header ẩn (Credentials), hãy bật dòng dưới:
         // corsConfiguration.setAllowCredentials(true);
         // ⚠️ Lưu ý: Nếu setAllowCredentials(true) thì allowedOrigins KHÔNG ĐƯỢC chứa "*"
+        corsConfiguration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);

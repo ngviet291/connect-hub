@@ -149,6 +149,12 @@ public class JwtService {
             throw new AppException(ErrorCode.INTROSPECT_FAILED);
         }
     }
-
-
+    public boolean isTokenValid(String token) {
+        try {
+            verifyToken(token);
+            return true;
+        } catch (AppException e) {
+            return false;
+        }
+    }
 }
