@@ -15,5 +15,8 @@ public class AppException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
-
+    public AppException(String message) {
+        super(message);
+        this.errorCode = ErrorCode.BAD_REQUEST;
+    }
 }

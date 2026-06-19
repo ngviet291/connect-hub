@@ -11,5 +11,5 @@ import java.util.UUID;
 
 @Repository
 public interface RepostRepository extends JpaRepository<Repost, UUID> {
-    long countByPost_Id(UUID postId);
+    long countByPostId(UUID postId);
 }

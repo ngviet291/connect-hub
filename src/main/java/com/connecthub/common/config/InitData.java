@@ -103,9 +103,10 @@ public class InitData implements CommandLineRunner {
         if (roleRepository.count() == 0) {
             roleRepository.saveAll(List.of(
                     Role.builder().id(RoleName.ROLE_ADMIN.name()).name(RoleName.ROLE_ADMIN).build(),
-                    Role.builder().id(RoleName.ROLE_USER.name()).name(RoleName.ROLE_USER).build()
+                    Role.builder().id(RoleName.ROLE_USER.name()).name(RoleName.ROLE_USER).build(),
+                    Role.builder().id(RoleName.ROLE_MODERATOR.name()).name(RoleName.ROLE_MODERATOR).build()
             ));
-            log.info("✓ Initialized 2 roles");
+            log.info("✓ Initialized 3 roles");
         }
     }
 
@@ -113,7 +114,7 @@ public class InitData implements CommandLineRunner {
         if (userRepository.count() == 0) {
             Role adminRole = roleRepository.findById(RoleName.ROLE_ADMIN.name()).orElseThrow();
             Role userRole = roleRepository.findById(RoleName.ROLE_USER.name()).orElseThrow();
-
+            Role moderatorRole = roleRepository.findById(RoleName.ROLE_MODERATOR.name()).orElseThrow();
             // Khởi tạo List chứa tất cả user sẽ save
             List<User> usersToSave = new ArrayList<>();
 
@@ -134,7 +135,19 @@ public class InitData implements CommandLineRunner {
                     .build();
 
             usersToSave.add(admin);
+            User moderator = User.builder()
+                    .id(UuidCreator.getTimeOrderedEpoch())
+                    .username("moderator")
+                    .email("moderator@connecthub.com")
+                    .password(passwordEncoder.encode("moderator123"))
+                    .fullName("Moderator User")
+                    .status(UserStatus.ACTIVE)
+                    .isActive(true)
+                    .isLocked(false)
+                    .roles(Set.of(moderatorRole, userRole))
+                    .build();
 
+            usersToSave.add(moderator);
             // 2. Sử dụng Faker để tự động generate thêm dữ liệu cho các Regular Users
             Faker faker = new Faker(new Locale("en")); // Bạn có thể đổi sang "vi" nếu muốn tên tiếng Việt
             String defaultPassword = passwordEncoder.encode("password123");
@@ -893,7 +906,6 @@ public class InitData implements CommandLineRunner {
                     uniqueChatPairs.size(), allMembersToSave.size(), allMessagesToSave.size(), allReceiptsToSave.size());
         }
     }
-
 
     private void initUserBlocks() {
         if (userBlockRepository.count() == 0) {

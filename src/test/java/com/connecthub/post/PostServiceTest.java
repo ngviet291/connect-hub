@@ -65,11 +65,11 @@ class PostServiceTest {
 
     private void mockCommonMappingDependencies() {
         when(postRepository.countByParentPostIdAndIsDeletedFalse(any())).thenReturn(1L);
-        when(reactionRepository.countByPost_Id(any())).thenReturn(2L);
-        when(repostRepository.countByPost_Id(any())).thenReturn(3L);
-        when(bookmarkRepository.countByPost_Id(any())).thenReturn(4L);
-        when(postViewRepository.countByPost_Id(any())).thenReturn(5L);
-        when(mediaRepository.findByPost_Id(any())).thenReturn(List.of());
+        when(reactionRepository.countByPostId(any())).thenReturn(2L);
+        when(repostRepository.countByPostId(any())).thenReturn(3L);
+        when(bookmarkRepository.countByPostId(any())).thenReturn(4L);
+        when(postViewRepository.countByPostId(any())).thenReturn(5L);
+        when(mediaRepository.findByPostId(any())).thenReturn(List.of());
         when(postMapper.mapToResponse(any(), any(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong()))
                 .thenReturn(new PostResponse());
     }

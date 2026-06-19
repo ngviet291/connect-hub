@@ -219,11 +219,11 @@ public class PostService {
     private PostResponse mapToResponse(Post post) {
         UUID postId = post.getId();
         long commentCount = postRepository.countByParentPostIdAndIsDeletedFalse(postId);
-        long reactionCount = reactionRepository.countByPost_Id(postId);
-        long repostCount = repostRepository.countByPost_Id(postId);
-        long bookmarkCount = bookmarkRepository.countByPost_Id(postId);
-        long viewCount = postViewRepository.countByPost_Id(postId);
-        var media = mediaRepository.findByPost_Id(postId);
+        long reactionCount = reactionRepository.countByPostId(postId);
+        long repostCount = repostRepository.countByPostId(postId);
+        long bookmarkCount = bookmarkRepository.countByPostId(postId);
+        long viewCount = postViewRepository.countByPostId(postId);
+        var media = mediaRepository.findByPostId(postId);
 
         return postMapper.mapToResponse(post, media, commentCount, reactionCount, repostCount, bookmarkCount, viewCount);
     }

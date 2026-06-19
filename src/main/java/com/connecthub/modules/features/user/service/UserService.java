@@ -13,6 +13,7 @@ import com.connecthub.modules.features.user.entity.User;
 // ...existing code... (removed unused import)
 import com.connecthub.modules.features.user.enums.UserStatus;
 import com.connecthub.modules.features.user.exception.AccessDeniedException;
+import com.connecthub.modules.features.user.exception.ConflictUserException;
 import com.connecthub.modules.features.user.exception.DuplicatePhoneNumberException;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.mapper.UserMapper;
@@ -111,30 +112,17 @@ public class UserService {
 
     @Transactional
     public void followUser(UUID targetUserId)  {
-        //System.out.println("========== FOLLOW DEBUG ==========");
-        System.out.println("targetUserId = " + targetUserId);
-
         String username = AppUtil.usernameFromAuthentication();
-        System.out.println("usernameFromAuthentication = " + username);
-
         User currentUser = getCurrentUser();
-        System.out.println("currentUser = " + currentUser.getUsername());
-        System.out.println("currentUserId = " + currentUser.getId());
-
         User targetUser = getUserOrThrow(targetUserId);
-        System.out.println("targetUser = " + targetUser.getUsername());
-        System.out.println("targetUserId = " + targetUser.getId());
-
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AccessDeniedException();
+            throw new ConflictUserException();
         }
-
         if (followRepository.existsByFollowerIdAndFollowingId(
                 currentUser.getId(),
                 targetUser.getId())) {
             return;
         }
-
         followRepository.save(Follow.builder()
                 .id(AppUtil.generateUUID())
                 .follower(currentUser)

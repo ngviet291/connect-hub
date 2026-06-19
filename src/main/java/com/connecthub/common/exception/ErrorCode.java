@@ -25,8 +25,8 @@ public enum ErrorCode {
     DUPLICATE_PHONE( "Phone number {phone} already exists", HttpStatus.CONFLICT),
     BAD_CREDENTIALS( "Bad credentials", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED( "Token expired", HttpStatus.UNAUTHORIZED),
+    CONFLICT_USER( "Conflict User", HttpStatus.CONFLICT),
 
-    ACCESS_DENIED( "Access denied", HttpStatus.FORBIDDEN),
     NOTIFICATION_NOT_FOUND( "Notification not found", HttpStatus.NOT_FOUND)
 
 
