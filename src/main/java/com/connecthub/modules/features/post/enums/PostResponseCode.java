@@ -12,8 +12,12 @@ public enum PostResponseCode {
     GET_HASHTAG_POSTS_SUCCESS("Posts by hashtag retrieved successfully", 2005),
     ADD_HASHTAG_SUCCESS("Hashtag added to post successfully", 2006),
     CREATE_REPLY_SUCCESS("Reply created successfully", 2007),
-    GET_REPLIES_SUCCESS("Replies retrieved successfully", 2008);
-
+    GET_REPLIES_SUCCESS("Replies retrieved successfully", 2008),
+    REACTION_SUCCESS("Reaction updated successfully", 2009),
+    BOOKMARK_SUCCESS("Bookmark updated successfully", 2010),
+    GET_BOOKMARKS_SUCCESS("Bookmarks retrieved successfully", 2011),
+    REPOST_SUCCESS("Repost updated successfully", 2012),
+    VIEW_RECORDED_SUCCESS("View recorded successfully", 2013);
     private final String message;
     private final int code;
 
