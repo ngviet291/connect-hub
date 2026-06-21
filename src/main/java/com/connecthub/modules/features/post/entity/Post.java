@@ -41,6 +41,19 @@ public class Post extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Visibility visibility;
     private boolean isDeleted;
+    @Builder.Default
+    private long reactionCount = 0;
+
+    @Builder.Default
+    private long commentCount = 0;
+
+    @Builder.Default
+    private long repostCount = 0;
+    @Builder.Default
+    private long bookmarkCount = 0;
+
+    @Builder.Default
+    private long viewCount = 0;
     private LocalDateTime deletedAt;
     @OneToMany(mappedBy = "post")
     

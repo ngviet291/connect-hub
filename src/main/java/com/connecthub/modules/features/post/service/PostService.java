@@ -4,28 +4,18 @@ import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
-import com.connecthub.modules.features.post.entity.Hashtag;
-import com.connecthub.modules.features.post.entity.Mention;
-import com.connecthub.modules.features.post.entity.Post;
-import com.connecthub.modules.features.post.entity.PostHashtag;
+import com.connecthub.modules.features.post.entity.*;
 import com.connecthub.modules.features.post.exception.HashtagNotFoundException;
 import com.connecthub.modules.features.post.exception.MentionedUserNotFoundException;
 import com.connecthub.modules.features.post.exception.PostAccessDeniedException;
 import com.connecthub.modules.features.post.exception.PostNotFoundException;
 import com.connecthub.modules.features.post.mapper.PostMapper;
-import com.connecthub.modules.features.post.repository.HashtagRepository;
-import com.connecthub.modules.features.post.repository.MediaRepository;
-import com.connecthub.modules.features.post.repository.MentionRepository;
-import com.connecthub.modules.features.post.repository.BookmarkRepository;
-import com.connecthub.modules.features.post.repository.PostHashtagRepository;
-import com.connecthub.modules.features.post.repository.PostRepository;
-import com.connecthub.modules.features.post.repository.PostViewRepository;
-import com.connecthub.modules.features.post.repository.ReactionRepository;
-import com.connecthub.modules.features.post.repository.RepostRepository;
+import com.connecthub.modules.features.post.repository.*;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import com.github.f4b6a3.uuid.UuidCreator;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Limit;
@@ -36,23 +26,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PostService {
+
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final HashtagRepository hashtagRepository;
     private final PostHashtagRepository postHashtagRepository;
     private final MentionRepository mentionRepository;
     private final MediaRepository mediaRepository;
-    private final ReactionRepository reactionRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final RepostRepository repostRepository;
-    private final PostViewRepository postViewRepository;
     private final PostMapper postMapper;
+    private final EntityManager entityManager;
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -75,35 +62,49 @@ public class PostService {
         }
 
         Post savedPost = postRepository.save(post);
+
+        if (request.getMediaIds() != null && !request.getMediaIds().isEmpty()) {
+            addMediaToPost(savedPost, request.getMediaIds());
+        }
         if (request.getHashtags() != null && !request.getHashtags().isEmpty()) {
             addHashtagsToPost(savedPost, request.getHashtags());
         }
-
         if (request.getMentionUserIds() != null && !request.getMentionUserIds().isEmpty()) {
             addMentionsToPost(savedPost, request.getMentionUserIds());
         }
 
         log.info("Post created: {} by user: {}", savedPost.getId(), userId);
-        return mapToResponse(savedPost);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Post fullPost = postRepository.findByIdWithDetails(savedPost.getId())
+                .orElseThrow(PostNotFoundException::new);
+        return postMapper.mapToResponse(fullPost);
     }
+
 
     @Transactional(readOnly = true)
     public PostResponse getPost(UUID postId) {
-        Post post = getPostOrThrow(postId);
+        Post post = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(PostNotFoundException::new);
 
         if (post.isDeleted()) {
             throw new PostNotFoundException("Post has been deleted");
         }
-
-        return mapToResponse(post);
+        return postMapper.mapToResponse(post);
     }
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public PostResponse updatePost(UUID postId, PostRequest request) {
-        java.util.UUID userId = AppUtil.userIdFormAuthentication();
-        Post post = getOwnedPostOrThrow(postId, userId, "update");
+        UUID userId = AppUtil.userIdFormAuthentication();
+        Post post = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(PostNotFoundException::new);
 
+        if (!post.getUser().getId().equals(userId)) {
+            throw new PostAccessDeniedException("update");
+        }
         if (post.isDeleted()) {
             throw new PostNotFoundException("Cannot update a deleted post");
         }
@@ -111,36 +112,38 @@ public class PostService {
         post.setContent(request.getContent());
         post.setVisibility(request.getVisibility());
 
-        Post updatedPost = postRepository.save(post);
+        postRepository.save(post);
         log.info("Post updated: {} by user: {}", postId, userId);
-        return mapToResponse(updatedPost);
+        entityManager.flush();
+        entityManager.clear();
+        Post fullPost = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(PostNotFoundException::new);
+        return postMapper.mapToResponse(fullPost);
     }
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public void deletePost(UUID postId) {
-        java.util.UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFormAuthentication();
         Post post = getOwnedPostOrThrow(postId, userId, "delete");
 
         post.setDeleted(true);
         postRepository.save(post);
+
+        if (post.getParentPost() != null) {
+            postRepository.decrementCommentCount(post.getParentPost().getId());
+        }
         log.info("Post deleted: {} by user: {}", postId, userId);
     }
-
 
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getUserFeed(UUID cursor, int size) {
         List<Post> feed = new ArrayList<>(
-                postRepository.findPublicFeed(cursor, Limit.of(size + 1))
+                postRepository.findPublicFeedWithDetails(cursor, Limit.of(size + 1))
         );
-
-        return AppUtil.buildCursorResponse(
-                feed,
-                size,
-                Post::getId,
-                this::mapToResponse
-        );
+        return AppUtil.buildCursorResponse(feed, size, Post::getId, postMapper::mapToResponse);
     }
+
 
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getPostsByHashtag(String hashtag, UUID cursor, int size) {
@@ -148,18 +151,14 @@ public class PostService {
                 .orElseThrow(() -> new HashtagNotFoundException(hashtag));
 
         List<PostHashtag> postHashtags = new ArrayList<>(
-                postHashtagRepository.findPostsByHashtagId(
-                        hashtagEntity.getId(),
-                        cursor,
-                        Limit.of(size + 1)
-                )
+                postHashtagRepository.findPostsByHashtagId(hashtagEntity.getId(), cursor, Limit.of(size + 1))
         );
 
         return AppUtil.buildCursorResponse(
                 postHashtags,
                 size,
                 ph -> ph.getPost().getId(),
-                ph -> mapToResponse(ph.getPost())
+                ph -> postMapper.mapToResponse(ph.getPost())
         );
     }
 
@@ -174,64 +173,43 @@ public class PostService {
     @PreAuthorize("hasRole('ROLE_USER')")
     public PostResponse createReply(UUID parentPostId, PostRequest request) {
         getPostOrThrow(parentPostId);
-
         request.setParentPostId(parentPostId);
-        return createPost(request);
+        PostResponse reply = createPost(request);
+        postRepository.incrementCommentCount(parentPostId);
+        return reply;
     }
+
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getReplies(UUID postId, UUID cursor, int size) {
         getPostOrThrow(postId);
-
         List<Post> replies = new ArrayList<>(
-                postRepository.findRepliesByParentPostId(postId, cursor, Limit.of(size + 1))
+                postRepository.findRepliesByParentPostIdWithDetails(postId, cursor, Limit.of(size + 1))
         );
-
-        return AppUtil.buildCursorResponse(
-                replies,
-                size,
-                Post::getId,
-                this::mapToResponse
-        );
-    }
-
-    private PostResponse mapToResponse(Post post) {
-        UUID postId = post.getId();
-        long commentCount = postRepository.countByParentPostIdAndIsDeletedFalse(postId);
-        long reactionCount = reactionRepository.countByPostId(postId);
-        long repostCount = repostRepository.countByPostId(postId);
-        long bookmarkCount = bookmarkRepository.countByPostId(postId);
-        long viewCount = postViewRepository.countByPostId(postId);
-        var media = mediaRepository.findByPostId(postId);
-
-        return postMapper.mapToResponse(post, media, commentCount, reactionCount, repostCount, bookmarkCount, viewCount);
+        return AppUtil.buildCursorResponse(replies, size, Post::getId, postMapper::mapToResponse);
     }
 
     private void addHashtagsToPost(Post post, List<String> hashtags) {
-        for (String hashtagName : hashtags) {
-            attachHashtag(post, hashtagName);
-        }
+        hashtags.forEach(name -> attachHashtag(post, name));
     }
 
     private void attachHashtag(Post post, String hashtagName) {
         Hashtag hashtag = hashtagRepository.findByName(hashtagName)
-                .orElseGet(() -> {
-                    Hashtag newHashtag = Hashtag.builder()
-                            .id(UuidCreator.getTimeOrderedEpoch())
-                            .name(hashtagName)
-                            .build();
-                    return hashtagRepository.save(newHashtag);
-                });
+                .orElseGet(() -> hashtagRepository.save(
+                        Hashtag.builder()
+                                .id(UuidCreator.getTimeOrderedEpoch())
+                                .name(hashtagName)
+                                .build()
+                ));
 
         if (postHashtagRepository.existsByPostIdAndHashtagId(post.getId(), hashtag.getId())) {
             return;
         }
 
-        PostHashtag postHashtag = PostHashtag.builder()
+        postHashtagRepository.save(PostHashtag.builder()
                 .post(post)
                 .hashtag(hashtag)
-                .build();
+                .build());
 
-        postHashtagRepository.save(postHashtag);
         log.info("Hashtag {} added to post {}", hashtagName, post.getId());
     }
 
@@ -240,18 +218,28 @@ public class PostService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new MentionedUserNotFoundException(userId));
 
-            Mention mention = Mention.builder()
+            mentionRepository.save(Mention.builder()
                     .id(UuidCreator.getTimeOrderedEpoch())
                     .post(post)
                     .user(user)
-                    .build();
-            mentionRepository.save(mention);
+                    .build());
         }
     }
+    private void addMediaToPost(Post post, List<UUID> mediaIds) {
+        // Chỉ lấy media chưa thuộc post nào tránh claim media của người khác
+//        List<Media> mediaList = mediaRepository.findAllByIdInAndPostIsNull(mediaIds);
+        List<Media> mediaList = mediaRepository.findAllById(mediaIds);
+        if (mediaList.size() != mediaIds.size()) {
+            log.warn("Some media not found or already attached. Expected: {}, Found: {}",
+                    mediaIds.size(), mediaList.size());
+        }
 
+        mediaList.forEach(media -> media.setPost(post));
+        mediaRepository.saveAll(mediaList);
+        log.info("Linked {} media to post: {}", mediaList.size(), post.getId());
+    }
     private User getUserOrThrow(UUID uuid) {
-        return userRepository.findById(uuid)
-                .orElseThrow(UserNotFoundException::new);
+        return userRepository.findById(uuid).orElseThrow(UserNotFoundException::new);
     }
 
     private Post getPostOrThrow(UUID postId) {
@@ -259,14 +247,12 @@ public class PostService {
                 .orElseThrow(PostNotFoundException::new);
     }
 
-    private Post getOwnedPostOrThrow(UUID postId, UUID uuid, String action) {
-        User user = getUserOrThrow(uuid);
+    private Post getOwnedPostOrThrow(UUID postId, UUID userId, String action) {
+        User user = getUserOrThrow(userId);
         Post post = getPostOrThrow(postId);
-
         if (!post.getUser().getId().equals(user.getId())) {
             throw new PostAccessDeniedException(action);
         }
-
         return post;
     }
 }

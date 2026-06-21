@@ -4,12 +4,13 @@ import com.connecthub.modules.features.post.enums.MediaType;
 import lombok.Builder;
 import lombok.*;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class MediaResponse {
     private UUID mediaId;
@@ -18,4 +19,5 @@ public class MediaResponse {
     private Long fileSize;       // bytes
     private String mimeType;     // "application/pdf"
     private MediaType type;      // IMAGE | VIDEO | FILE
+
 }

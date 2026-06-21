@@ -35,9 +35,9 @@ public enum ErrorCode implements BaseErrorCode {
     CONFLICT_USERNAME( "Username already exists", HttpStatus.CONFLICT),
 
     UPLOAD_MEDIA_FAILED("Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_NOT_FOUND( "File not found", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED( "File size exceeded the limit",HttpStatus.BAD_REQUEST)
-
-            ;
+    ;
 
 
     private final String message;

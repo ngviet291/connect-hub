@@ -2,11 +2,12 @@ package com.connecthub.modules.features.user.controller;
 
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
+import com.connecthub.modules.features.social.dto.FollowStats;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
-import com.connecthub.modules.features.user.dto.response.UserStatsResponse;
+
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.enums.UserResponseCode;
 import com.connecthub.modules.features.user.service.UserService;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -137,6 +139,15 @@ public class UserController {
                 .build();
     }
 
+    @PutMapping(value = "/avatar", consumes = "multipart/form-data")
+    public ApiResponse<UserResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.UPDATE_USER_SUCCESS.getCode())
+                .message(UserResponseCode.UPDATE_USER_SUCCESS.getMessage())
+                .data(userService.uploadAvatar(file))
+                .build();
+    }
+
     @PutMapping("/status")
     public ApiResponse<Void> changeStatus(
             @Valid @RequestBody UserStatusRequest request
@@ -149,8 +160,8 @@ public class UserController {
     }
 
     @GetMapping("/stats")
-    public ApiResponse<UserStatsResponse> getStats() {
-        return ApiResponse.<UserStatsResponse>builder()
+    public ApiResponse<FollowStats> getStats() {
+        return ApiResponse.<FollowStats>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
                 .message(UserResponseCode.GET_USER_STATS_SUCCESS.getMessage())
                 .data(userService.getStats())
@@ -159,8 +170,8 @@ public class UserController {
 
     // ADMIN
     @GetMapping("/{id}/stats")
-    public ApiResponse<UserStatsResponse> getStats(@PathVariable UUID id) {
-        return ApiResponse.<UserStatsResponse>builder()
+    public ApiResponse<FollowStats> getStats(@PathVariable UUID id) {
+        return ApiResponse.<FollowStats>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
                 .message(UserResponseCode.GET_USER_STATS_SUCCESS.getMessage())
                 .data(userService.getStats(id))

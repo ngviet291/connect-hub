@@ -1,4 +1,4 @@
-package com.connecthub.modules.features.user.dto.response;
+package com.connecthub.modules.features.social.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,10 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class UserStatsResponse {
+public class FollowStats {
     private long followersCount;
     private long followingCount;
 }
