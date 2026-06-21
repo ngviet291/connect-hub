@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
 @Getter
-public enum ErrorCode implements BaseErrorCode {
+    public enum ErrorCode implements BaseErrorCode {
     UNCATEGORIZED_EXCEPTION("Uncategorized Exception", HttpStatus.INTERNAL_SERVER_ERROR),
     INTERNAL_SERVER_ERROR("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR),
     BAD_REQUEST("Bad Request", HttpStatus.BAD_REQUEST),
