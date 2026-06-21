@@ -33,8 +33,8 @@ public enum ErrorCode {
     POST_ACCESS_DENIED( "Access denied to the post", HttpStatus.FORBIDDEN),
     UPLOAD_MEDIA_FAILED("Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
     POST_NOT_FOUND( "Post not found", HttpStatus.NOT_FOUND),
-    FILE_NOT_FOUND( "File not found", HttpStatus.NOT_FOUND)
-
+    FILE_NOT_FOUND( "File not found", HttpStatus.NOT_FOUND),
+    INVALID_FILE_TYPE( "Invalid file type. Only image files are allowed", HttpStatus.BAD_REQUEST)
     ;
 
 

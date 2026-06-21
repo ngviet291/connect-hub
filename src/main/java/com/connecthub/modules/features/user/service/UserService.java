@@ -16,9 +16,7 @@ import com.connecthub.modules.features.user.dto.response.UserResponse;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.enums.UserStatus;
-import com.connecthub.modules.features.user.exception.ConflictUserException;
-import com.connecthub.modules.features.user.exception.DuplicatePhoneNumberException;
-import com.connecthub.modules.features.user.exception.UserNotFoundException;
+import com.connecthub.modules.features.user.exception.*;
 import com.connecthub.modules.features.user.mapper.UserMapper;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -194,16 +192,16 @@ public class UserService {
 
         // basic validation
         if (file == null || file.isEmpty()) {
-            throw new AppException("File is empty");
+            throw new FileNotFoundException();
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
-            throw new AppException("Invalid file type. Only image files are allowed.");
+            throw new InvalidFileTypeException();
         }
 
         if (file.getSize() > MAX_AVATAR_SIZE) {
-            throw new AppException(ErrorCode.FILE_SIZE_EXCEEDED.getMessage());
+            throw new FileSizeExceededException();
         }
 
         try {
@@ -285,8 +283,10 @@ public class UserService {
     }
 
     private CursorResponse<UserSummaryResponse> buildFollowersResponse(UUID userId, UUID cursor, int size) {
-        getUserByIdOrThrow(userId);
 
+        if(!userRepository.existsById(userId)){
+            throw new UserNotFoundException();
+        }
         List<Follow> follows = new ArrayList<>(followRepository.findFollowersOptimized(userId, cursor, Limit.of(size + 1)));
         boolean hasNext = follows.size() > size;
         if (hasNext) {
@@ -302,7 +302,9 @@ public class UserService {
     }
 
     private CursorResponse<UserSummaryResponse> buildFollowingResponse(UUID userId, UUID cursor, int size) {
-        getUserByIdOrThrow(userId);
+        if(!userRepository.existsById(userId)){
+            throw new UserNotFoundException();
+        }
 
         List<Follow> follows = new ArrayList<>(followRepository.findFollowingOptimized(userId, cursor, Limit.of(size + 1)));
         boolean hasNext = follows.size() > size;
