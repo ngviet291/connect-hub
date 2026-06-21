@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.notification.entity;
 
 import com.connecthub.common.entity.BaseEntity;
+import com.connecthub.modules.features.chat.entity.Conversation;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.user.entity.User;
@@ -31,11 +32,16 @@ public class Notification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversation_id")
+    private Conversation conversation;
+
     private String content;
     private String targetUrl;
     @Enumerated(EnumType.STRING)
     private NotificationType type;
-    private boolean isRead;
+    @Builder.Default
+    private boolean isRead = false;
 
-    // Getters and Setters
 }

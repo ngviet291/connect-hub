@@ -5,6 +5,7 @@ import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.notification.dto.response.NotificationResponse;
 import com.connecthub.modules.features.notification.dto.response.NotificationUnreadResponse;
 import com.connecthub.modules.features.notification.enums.NotificationResponseCode;
+import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.service.NotificationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -50,10 +51,11 @@ public class NotificationController {
     @GetMapping
     public ApiResponse<CursorResponse<NotificationResponse>> getNotification(
             UUID cursor,
-           @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
-    ) {
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) NotificationType type
+            ) {
         return ApiResponse.<CursorResponse<NotificationResponse>>builder()
-                .data(notificationService.getNotification(cursor, size))
+                .data(notificationService.getNotification(cursor, size, type))
                 .code(NotificationResponseCode.GET_NOTIFICATION.getCode())
                 .message(NotificationResponseCode.GET_NOTIFICATION.getMessage())
                 .build();

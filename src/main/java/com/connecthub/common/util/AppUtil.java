@@ -12,12 +12,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
-
+@Component
 public class AppUtil {
     public static ErrorResponse generateErrorResponse(HttpServletRequest request, ErrorCode errorCode) {
         return ErrorResponse.builder()
@@ -61,14 +62,23 @@ public class AppUtil {
         return UuidCreator.getTimeOrderedEpoch();
     }
 
-    public static UUID userIdFormAuthentication(){
+    public static UUID userIdFormAuthentication() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new UnauthenticatedException();
         }
 
-        return UUID.fromString(authentication.getName());
+        String principal = authentication.getName();
+        if (principal == null || principal.isBlank()) {
+            throw new UnauthenticatedException();
+        }
+
+        try {
+            return UUID.fromString(principal);
+        } catch (IllegalArgumentException ex) {
+            throw new UnauthenticatedException();
+        }
     }
     public static <T, R> CursorResponse<R> buildCursorResponse(
             List<T> items,

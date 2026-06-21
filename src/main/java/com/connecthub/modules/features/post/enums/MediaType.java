@@ -4,5 +4,6 @@ public enum MediaType {
     IMAGE,
     VIDEO,
     AUDIO,
-    DOCUMENT
+    DOCUMENT,
+    TEXT,
 }

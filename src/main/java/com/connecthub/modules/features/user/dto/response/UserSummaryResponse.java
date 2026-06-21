@@ -19,5 +19,5 @@ public class UserSummaryResponse {
 
     private String avatarUrl;
 
-    private boolean verified;
+
 }

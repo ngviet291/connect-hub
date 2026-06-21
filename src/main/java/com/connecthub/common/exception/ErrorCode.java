@@ -1,12 +1,11 @@
 package com.connecthub.common.exception;
 
 import lombok.Getter;
-import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
 @Getter
-public enum ErrorCode {
+public enum ErrorCode implements BaseErrorCode {
     UNCATEGORIZED_EXCEPTION("Uncategorized Exception", HttpStatus.INTERNAL_SERVER_ERROR),
     INTERNAL_SERVER_ERROR("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR),
     BAD_REQUEST("Bad Request", HttpStatus.BAD_REQUEST),
@@ -33,6 +32,8 @@ public enum ErrorCode {
     POST_ACCESS_DENIED("Access denied to the post", HttpStatus.FORBIDDEN),
     POST_NOT_FOUND("Post not found", HttpStatus.NOT_FOUND),
 
+    CONFLICT_USERNAME( "Username already exists", HttpStatus.CONFLICT),
+
     UPLOAD_MEDIA_FAILED("Failed to upload file", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_SIZE_EXCEEDED( "File size exceeded the limit",HttpStatus.BAD_REQUEST)
 
@@ -46,4 +47,4 @@ public enum ErrorCode {
         this.message = message;
         this.statusCode = statusCode;
     }
-    }
+}

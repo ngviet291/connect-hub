@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.notification.repository;
 
 import com.connecthub.modules.features.notification.entity.Notification;
+import com.connecthub.modules.features.notification.enums.NotificationType;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,8 +32,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             SELECT n
             FROM Notification n
             WHERE n.recipient.id = :recipientId
+            AND (:type IS NULL OR n.type = :type)
             AND (:cursor IS NULL OR n.id < :cursor)
             ORDER BY n.id DESC
         """)
-    List<Notification> findByRecipientId(UUID recipientId, UUID cursor, Limit limit);
+    List<Notification> findByRecipientIdAndType(UUID recipientId, UUID cursor, Limit limit, NotificationType type);
 }

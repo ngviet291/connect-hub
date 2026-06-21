@@ -18,11 +18,22 @@ public class MessageSecurityConfig {
             MessageMatcherDelegatingAuthorizationManager.Builder messages) {
 
         messages
-                .simpTypeMatchers(SimpMessageType.CONNECT, SimpMessageType.DISCONNECT, SimpMessageType.HEARTBEAT).permitAll()
-                .simpSubscribeDestMatchers("/topic/admin/**").hasRole("ADMIN")
+                // CONNECT / DISCONNECT / HEARTBEAT — không cần auth
+                .simpTypeMatchers(SimpMessageType.CONNECT,
+                        SimpMessageType.DISCONNECT,
+                        SimpMessageType.HEARTBEAT).permitAll()
+
+                // Subscribe các topic chat — cần authenticated
+                .simpSubscribeDestMatchers("/topic/conversations/**").authenticated()  // ← THÊM
                 .simpSubscribeDestMatchers("/user/queue/**").authenticated()
                 .simpSubscribeDestMatchers("/topic/orders/**").authenticated()
-                .simpDestMatchers("/app/order/*/cancel").authenticated()
+
+                // Admin
+                .simpSubscribeDestMatchers("/topic/admin/**").hasRole("ADMIN")
+
+                // Send đến /app/**
+                .simpDestMatchers("/app/**").authenticated()  // ← THÊM (thay vì liệt kê từng cái)
+
                 .anyMessage().denyAll();
 
         return messages.build();

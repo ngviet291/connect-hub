@@ -23,9 +23,9 @@ public class Conversation extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ConversationType type;
 
-    @OneToMany(mappedBy = "conversation")
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ConversationMember> conversationMembers;
 
-    @OneToMany(mappedBy = "conversation")
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Message> messages;
 }

@@ -1,7 +1,7 @@
 package com.connecthub.modules.features.chat.dto.request;
 
 import com.connecthub.modules.features.post.enums.MediaType;
-import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,10 +16,23 @@ import java.util.UUID;
 @Builder
 @Data
 public class SendMessageRequest {
-    @NotNull
-    private UUID recipientId;
-    private String content;
-    private List<String> media;
-    private MediaType mediaType;
 
+    private UUID conversationId;
+    private UUID recipientId;
+
+    private String content;          // null nếu chỉ gửi media
+
+    private UUID replyToMessageId;   // null nếu không reply
+
+    private List<MediaRequest> media; // null hoặc empty nếu chỉ gửi text
+
+    @Data
+    public static class MediaRequest {
+        @NotBlank
+        private String url;
+        @NotNull
+        private MediaType type;
+        private String fileName;
+        private Long size;
+    }
 }

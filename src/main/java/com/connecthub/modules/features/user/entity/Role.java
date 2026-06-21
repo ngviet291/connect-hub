@@ -19,7 +19,7 @@ public class Role extends BaseEntity {
     private String id;
 
     @Column(unique = true)
-    @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     private RoleName name;
 
     @ManyToMany(mappedBy = "roles")

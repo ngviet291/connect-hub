@@ -9,5 +9,6 @@ public enum NotificationType {
     MENTION,
     SYSTEM,
     REPOST,
+    MESSAGE_PENDING,
 
 }

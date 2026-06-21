@@ -14,4 +14,16 @@ import java.util.UUID;
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
+    @Query("""
+                SELECT DISTINCT c FROM Conversation c
+                JOIN c.conversationMembers cm1
+                JOIN c.conversationMembers cm2
+                WHERE c.type = 'PRIVATE'
+                  AND cm1.user.id = :senderId
+                  AND cm2.user.id = :recipientId
+            """)
+    Optional<Conversation> findPrivateConversation(
+            @Param("senderId") UUID senderId,
+            @Param("recipientId") UUID recipientId
+    );
 }
