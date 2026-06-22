@@ -5,13 +5,12 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
 import com.connecthub.modules.features.chat.dto.response.MessageResponse;
 import com.connecthub.modules.features.chat.entity.Conversation;
+import com.connecthub.modules.features.chat.entity.ConversationMember;
 import com.connecthub.modules.features.chat.entity.Message;
 import com.connecthub.modules.features.chat.enums.ConversationType;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.chat.enums.MessageStatus;
-import com.connecthub.modules.features.chat.exception.InvalidChatRequestException;
-import com.connecthub.modules.features.chat.exception.InvalidTypeConversionException;
-import com.connecthub.modules.features.chat.exception.SenderNotConversationMemberException;
+import com.connecthub.modules.features.chat.exception.*;
 import com.connecthub.modules.features.chat.mapper.MessageMapper;
 import com.connecthub.modules.features.chat.repository.ConversationMemberRepository;
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
@@ -19,6 +18,8 @@ import com.connecthub.modules.features.social.service.FollowService;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
+import com.connecthub.modules.features.user.service.UserBlockService;
+import com.connecthub.modules.features.user.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -41,93 +42,105 @@ public class ChatService {
     private final ConversationService conversationService;
     private final ConversationMemberRepository conversationMemberRepository;
     private final WebSocketService webSocketService;
+    private final UserBlockService userBlockService;
 
     @Transactional
     @PreAuthorize("hasRole('USER')")
-    public MessageResponse sendFirstMessage(SendMessageRequest request) {
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        if (request.getContent() == null && (request.getMedia() == null || request.getMedia().isEmpty())) {
-            throw new InvalidChatRequestException();
-        }
+    public MessageResponse sendMessage(SendMessageRequest request) {
+        validateContentPresent(request);
 
         UUID senderId = AppUtil.userIdFormAuthentication();
+        UUID recipientId = request.getRecipientId();
 
-        if (!userRepository.existsById(request.getRecipientId())) {
-            throw new UserNotFoundException();
-        }
+        User recipient = userRepository.findById(recipientId)
+                .orElseThrow(UserNotFoundException::new);
+        validateNotBlocked(senderId, recipientId);
 
-        //TODO: nếu đang bị block thì không cho gửi tin nhắn ném lỗi, đợi userService làm xong
-
-        Optional<Conversation> existing = conversationRepository
-                .findPrivateConversation(senderId, request.getRecipientId());
-        // BLOCK xử lí ở todo
-
-
-        // tao proxy entity để tránh truy vấn thừa
-        User recipient = userRepository.getReferenceById(request.getRecipientId());
         User sender = userRepository.getReferenceById(senderId);
+
+        Optional<Conversation> existing = conversationRepository.findPrivateConversation(senderId, recipientId);
         if (existing.isPresent()) {
             return sendToExistingConversation(existing.get(), sender, request);
         }
 
-        MemberStatus recipientStatus = followService.isMutualFollow(senderId, request.getRecipientId())
+        // tạo conversation mới nếu chưa có, và lưu message vào conversation đó
+        MemberStatus recipientStatus = followService.isMutualFollow(senderId, recipientId)
                 ? MemberStatus.ACCEPTED
                 : MemberStatus.PENDING;
 
-        System.out.println("recipientStatus: " + recipientStatus);
-        // tạo conversion mới
-        Conversation conversation = conversationService.createPrivateConversation(
-                sender, recipient, recipientStatus
-        );
-
-
+        Conversation conversation = conversationService.createPrivateConversation(sender, recipient, recipientStatus);
         Message message = messageService.saveMessage(conversation, sender, request);
 
-        MessageResponse messageResponse = messageMapper.toResponse(
-                message,
-                message.getSender(),
-                conversation,
-                recipientStatus,
-                MessageStatus.SENT
+        MessageResponse response = messageMapper.toResponse(
+                message, message.getSender(), conversation, recipientStatus, MessageStatus.SENT
         );
 
-        if (recipientStatus == MemberStatus.ACCEPTED) {
-            webSocketService.pushMessage(request.getRecipientId(), messageResponse);
-        } else {
-            webSocketService.pushPendingNotification(request.getRecipientId(), conversation);
-        }
-        // push notification to recipient by WS
-        return messageResponse;
+        pushToRecipient(recipientId, recipientStatus, response);
+        return response;
     }
-
 
     private MessageResponse sendToExistingConversation(Conversation conversation, User sender, SendMessageRequest request) {
         if (conversation.getType() != ConversationType.PRIVATE) {
             throw new InvalidTypeConversionException(ConversationType.PRIVATE);
         }
-        // tao proxy entity để tránh truy vấn thừa
-        Message message = messageService.saveMessage(conversation, sender, request);
-        // Lấy status thực tế của recipient từ DB
-        MemberStatus recipientStatus = conversationMemberRepository
-                .findByConversationAndUserNot(conversation, sender) // lấy member không phải sender
-                .orElseThrow(SenderNotConversationMemberException::new)
-                .getStatus();
 
-        // push notification to recipient by WS
-        MessageResponse messageResponse = messageMapper.toResponse(
-                message,
-                message.getSender(),
-                conversation,
-                recipientStatus,
-                MessageStatus.SENT
+        Message message = messageService.saveMessage(conversation, sender, request);
+
+        MemberStatus recipientStatus = resolveAndMaybePromoteRecipientStatus(
+                conversation, sender, request.getRecipientId()
         );
-        if (recipientStatus == MemberStatus.ACCEPTED) {
-            webSocketService.pushMessage(request.getRecipientId(), messageResponse);
-        } else {
-            webSocketService.pushPendingNotification(request.getRecipientId(), conversation);
+
+        MessageResponse response = messageMapper.toResponse(
+                message, message.getSender(), conversation, recipientStatus, MessageStatus.SENT
+        );
+
+        pushToRecipient(request.getRecipientId(), recipientStatus, response);
+        return response;
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────
+
+    private void validateContentPresent(SendMessageRequest request) {
+        boolean noContent = request.getContent() == null;
+        boolean noMedia = request.getMedia() == null || request.getMedia().isEmpty();
+        if (noContent && noMedia) {
+            throw new InvalidChatRequestException();
         }
-        return messageResponse;
+    }
+
+    private void validateNotBlocked(UUID senderId, UUID recipientId) {
+        if (userBlockService.isBlockedBy(senderId, recipientId)) {
+            throw new BlockedBySenderException();
+        }
+        if (userBlockService.isBlockedBy(recipientId, senderId)) {
+            throw new RecipientBlockedException();
+        }
+    }
+
+    // Đọc status đã lưu; chỉ nâng PENDING → ACCEPTED nếu giờ đã mutual follow.
+    // Không bao giờ hạ ACCEPTED → PENDING (vd sau khi unfollow) — một khi đã
+    // accept thì giữ nguyên.
+    private MemberStatus resolveAndMaybePromoteRecipientStatus(
+            Conversation conversation, User sender, UUID recipientId
+    ) {
+        ConversationMember recipientMember = conversationMemberRepository
+                .findByConversationAndUserNot(conversation, sender)
+                .orElseThrow(SenderNotConversationMemberException::new);
+
+        MemberStatus status = recipientMember.getStatus();
+        if (status == MemberStatus.PENDING && followService.isMutualFollow(sender.getId(), recipientId)) {
+            status = MemberStatus.ACCEPTED;
+            recipientMember.setStatus(status);
+            conversationMemberRepository.save(recipientMember);
+        }
+        return status;
+    }
+
+    private void pushToRecipient(UUID recipientId, MemberStatus status, MessageResponse response) {
+        if (status == MemberStatus.ACCEPTED) {
+            webSocketService.pushMessage(recipientId, response);
+        } else {
+            webSocketService.pushPendingNotification(recipientId, response);
+        }
     }
 }

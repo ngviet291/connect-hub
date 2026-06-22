@@ -103,6 +103,7 @@ public class NotificationService {
      */
     @Transactional
     public NotificationResponse createNotification(NotificationRequest request) {
+        System.out.println("Creating notification: " + request);
         //
         User recipient = userRepository.getReferenceById(request.getRecipient());
 

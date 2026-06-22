@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -139,7 +140,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping(value = "/avatar", consumes = "multipart/form-data")
+    @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<UserResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.UPDATE_USER_SUCCESS.getCode())

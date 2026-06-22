@@ -21,7 +21,7 @@ public class ChatController {
     public ApiResponse<MessageResponse> sendMessage(@RequestBody SendMessageRequest messageRequest){
         return ApiResponse.<MessageResponse>builder()
                 .message("Message sent successfully")
-                .data(chatService.sendFirstMessage(messageRequest))
+                .data(chatService.sendMessage(messageRequest))
                 .code(200)
                 .build();
     }

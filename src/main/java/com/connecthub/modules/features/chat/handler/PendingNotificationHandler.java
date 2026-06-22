@@ -28,8 +28,9 @@ public class PendingNotificationHandler implements EventHandler<PendingNotificat
         NotificationRequest notificationRequest = NotificationRequest.builder()
                 .actor(event.getSenderId())
                 .type(NotificationType.MESSAGE_PENDING)
+                .content(event.getFirstMessagePreview())
                 .recipient(event.getRecipientId())
-                .conversationId(event.getConversationId())
+                .conversationId(event.getMessageResponse().getConversationId())
                 .build();
 
         notificationService.createNotification(notificationRequest);
