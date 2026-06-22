@@ -14,4 +14,19 @@ import java.util.UUID;
 
 @Repository
 public interface MessageReceiptRepository extends JpaRepository<MessageReceipt, UUID> {
+
+    // MessageReceiptRepository
+    @Query("""
+            SELECT r.message.conversation.id, COUNT(r)
+            FROM MessageReceipt r
+            WHERE r.message.conversation.id IN :conversationIds
+              AND r.user.id = :userId
+              AND r.status <> :readStatus
+            GROUP BY r.message.conversation.id
+            """)
+    List<Object[]> countUnreadGroupedByConversation(
+            @Param("conversationIds") List<UUID> conversationIds,
+            @Param("userId") UUID userId,
+            @Param("readStatus") MessageStatus readStatus
+    );
 }

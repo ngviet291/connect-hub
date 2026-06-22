@@ -8,6 +8,7 @@ import com.connecthub.modules.features.chat.dto.response.ConversationResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResponse;
 import com.connecthub.modules.features.chat.entity.Conversation;
 import com.connecthub.modules.features.chat.enums.ChatResponseCode;
+import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.chat.service.ChatService;
 import com.connecthub.modules.features.chat.service.ConversationService;
 import jakarta.validation.constraints.Max;
@@ -25,7 +26,7 @@ public class ConversationController {
     private final ChatService chatService;
 
     @PatchMapping("/accept")
-    public void acceptConversationRequest(AcceptConversationRequest request ) {
+    public void acceptConversationRequest(AcceptConversationRequest request) {
         conversationService.acceptConversationMember(request);
         // Implementation for accepting a conversation request
     }
@@ -33,12 +34,13 @@ public class ConversationController {
     @GetMapping
     public ApiResponse<CursorResponse<ConversationSummaryResponse>> getConversations(
             @RequestParam(required = false) UUID cursor,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) MemberStatus status
     ) {
         return ApiResponse.<CursorResponse<ConversationSummaryResponse>>builder()
                 .code(ChatResponseCode.GET_CONVERSATIONS_SUCCESS.getCode())
                 .message(ChatResponseCode.GET_CONVERSATIONS_SUCCESS.getMessage())
-                .data(conversationService.getConversations(cursor, size))
+                .data(conversationService.getConversations(cursor, size, status))
                 .build();
     }
 

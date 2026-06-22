@@ -5,7 +5,7 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.notification.entity.Notification;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
-import com.connecthub.modules.features.social.dto.FollowStats;
+import com.connecthub.modules.features.social.dto.FollowStatsResponse;
 import com.connecthub.modules.features.social.entity.Follow;
 import com.connecthub.modules.features.social.repository.FollowRepository;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
@@ -472,12 +472,12 @@ class UserServiceTest {
         @Test
         void getStats_admin_success() {
             UUID userId = UUID.randomUUID();
-            FollowStats expectedStats = new FollowStats(10L, 5L);
+            FollowStatsResponse expectedStats = new FollowStatsResponse(10L, 5L);
 
             when(userRepository.existsById(userId)).thenReturn(true);
             when(userRepository.countFollowStats(userId)).thenReturn(expectedStats);
 
-            FollowStats result = userService.getStats(userId);
+            FollowStatsResponse result = userService.getStats(userId);
 
             assertSame(expectedStats, result);
             verify(userRepository).existsById(userId);
@@ -500,7 +500,7 @@ class UserServiceTest {
             when(userRepository.existsById(userId)).thenReturn(true);
             when(userRepository.countFollowStats(userId)).thenReturn(null);
 
-            FollowStats result = userService.getStats(userId);
+            FollowStatsResponse result = userService.getStats(userId);
 
             assertNotNull(result);
             assertEquals(0L, result.getFollowersCount());
@@ -509,12 +509,12 @@ class UserServiceTest {
 
         @Test
         void getStats_user_success() {
-            FollowStats expectedStats = new FollowStats(3L, 2L);
+            FollowStatsResponse expectedStats = new FollowStatsResponse(3L, 2L);
 
             when(userRepository.existsById(CURRENT_USER_ID)).thenReturn(true);
             when(userRepository.countFollowStats(CURRENT_USER_ID)).thenReturn(expectedStats);
 
-            FollowStats result = userService.getStats();
+            FollowStatsResponse result = userService.getStats();
 
             assertSame(expectedStats, result);
             verify(userRepository).existsById(CURRENT_USER_ID);

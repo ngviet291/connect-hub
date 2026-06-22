@@ -12,7 +12,6 @@ import java.util.UUID;
 public class FollowResponse {
     private UUID followerId;
     private UUID followingId;
-    private String message;
     private boolean success;
 }
 

@@ -33,7 +33,6 @@ public class ConversationSummaryResponse {
     private String lastMessageContent;
     private String lastMessageSenderUsername;
     private LocalDateTime lastMessageAt;
-    private MessageStatus lastMessageStatus;
 
     private long unreadCount;
 

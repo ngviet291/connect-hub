@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.chat.repository;
 
 import com.connecthub.modules.features.chat.entity.Conversation;
+import com.connecthub.modules.features.chat.enums.MemberStatus;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,12 +30,19 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             @Param("recipientId") UUID recipientId
     );
 
+    // ConversationRepository
     @Query("""
-                        SELECT c FROM Conversation c
-                        JOIN c.conversationMembers cm
-                        WHERE cm.user.id = :userId
-                          AND cm.status = 'ACCEPTED'
-                          AND (:cursor IS NULL OR c.id < :cursor)
+    SELECT c FROM Conversation c
+    JOIN c.conversationMembers cm
+    WHERE cm.user.id = :userId
+      AND (:status IS NULL OR cm.status = :status)
+      AND (:cursor IS NULL OR c.id < :cursor)
+    ORDER BY c.id DESC
     """)
-    List<Conversation> findConversationsByUserId(UUID userId, UUID cursor, Limit limit);
+    List<Conversation> findConversationsByUserId(
+            @Param("userId") UUID userId,
+            @Param("cursor") UUID cursor,
+            Limit limit,
+            @Param("status") MemberStatus status
+    );
 }

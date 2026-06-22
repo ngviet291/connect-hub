@@ -1,43 +1,39 @@
-package com.connecthub.modules.features.chat.handler;
+package com.connecthub.modules.features.notification.handler;
 
 import com.connecthub.common.websocket.handler.EventHandler;
-import com.connecthub.modules.features.chat.event.PendingNotificationEvent;
 import com.connecthub.modules.features.notification.dto.request.NotificationRequest;
 import com.connecthub.modules.features.notification.enums.NotificationType;
+import com.connecthub.modules.features.notification.event.NotificationEvent;
 import com.connecthub.modules.features.notification.service.NotificationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PendingNotificationHandler implements EventHandler<PendingNotificationEvent> {
+@RequiredArgsConstructor
+public class NotificationHandler implements EventHandler<NotificationEvent> {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final NotificationService notificationService;
 
-    public PendingNotificationHandler(SimpMessagingTemplate simpMessagingTemplate, NotificationService notificationService) {
-        this.simpMessagingTemplate = simpMessagingTemplate;
-        this.notificationService = notificationService;
+    @Override
+    public Class<NotificationEvent> support() {
+        return NotificationEvent.class;
     }
 
     @Override
-    public Class<PendingNotificationEvent> support() {
-        return PendingNotificationEvent.class;
-    }
-
-    @Override
-    public void handle(PendingNotificationEvent event) {
+    public void handle(NotificationEvent event) {
         NotificationRequest notificationRequest = NotificationRequest.builder()
-                .actor(event.getSenderId())
-                .type(NotificationType.MESSAGE_PENDING)
-                .content(event.getFirstMessagePreview())
                 .recipient(event.getRecipientId())
-                .conversationId(event.getMessageResponse().getConversationId())
+                .actor(event.getActor().getId())
+                .content(event.getContent())
+                .type(NotificationType.FOLLOW)
                 .build();
 
         notificationService.createNotification(notificationRequest);
 
         simpMessagingTemplate.convertAndSendToUser(
                 event.getRecipientId().toString(),
-                "/queue/pending",
+                "/queue/notifications",
                 event
         );
     }

@@ -14,6 +14,8 @@ import com.connecthub.modules.features.chat.exception.*;
 import com.connecthub.modules.features.chat.mapper.MessageMapper;
 import com.connecthub.modules.features.chat.repository.ConversationMemberRepository;
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
+import com.connecthub.modules.features.notification.event.NotificationEvent;
+import com.connecthub.modules.features.notification.service.NotificationService;
 import com.connecthub.modules.features.social.service.FollowService;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
@@ -43,6 +45,7 @@ public class ChatService {
     private final ConversationMemberRepository conversationMemberRepository;
     private final WebSocketService webSocketService;
     private final UserBlockService userBlockService;
+    private final NotificationService notificationService;
 
     @Transactional
     @PreAuthorize("hasRole('USER')")
@@ -140,7 +143,20 @@ public class ChatService {
         if (status == MemberStatus.ACCEPTED) {
             webSocketService.pushMessage(recipientId, response);
         } else {
-            webSocketService.pushPendingNotification(recipientId, response);
+            notificationService.pushNotification(
+                    NotificationEvent.builder()
+                            .recipientId(recipientId)
+                            .content(response.getContent())
+                            .actor(com.connecthub.modules.features.notification.dto.response.UserSummaryResponse.builder()
+                                    .id(response.getSenderId())
+                                    .username(response.getSenderUsername())
+                                    .avatarUrl(response.getSenderAvatarUrl())
+                                    .build())
+                            .entityId(response.getConversationId())
+                            .type(com.connecthub.modules.features.notification.enums.NotificationType.MESSAGE)
+                            .createdAt(java.time.LocalDateTime.now())
+                            .build()
+            );
         }
     }
 }

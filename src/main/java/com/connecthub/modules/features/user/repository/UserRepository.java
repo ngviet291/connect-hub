@@ -1,6 +1,6 @@
 package com.connecthub.modules.features.user.repository;
 
-import com.connecthub.modules.features.social.dto.FollowStats;
+import com.connecthub.modules.features.user.dto.response.FollowStatsResponse;
 import com.connecthub.modules.features.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -30,15 +30,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      @Query("SELECT u FROM User u WHERE u.id = :id AND u.isActive = true")
      Optional<User> findActiveById(UUID id);
     @Query("""
-    SELECT new com.connecthub.modules.features.social.dto.FollowStats(
+    SELECT new com.connecthub.modules.features.user.dto.response.FollowStatsResponse(
         COUNT(DISTINCT follower.id),
         COUNT(DISTINCT following.id)
     )
     FROM User u
-    LEFT JOIN u.followers follower   
+    LEFT JOIN u.followers follower
     LEFT JOIN u.following following  
     WHERE u.id = :userId
     GROUP BY u.id
 """)
-    FollowStats countFollowStats(UUID userId);
+    FollowStatsResponse countFollowStats(UUID userId);
 }
