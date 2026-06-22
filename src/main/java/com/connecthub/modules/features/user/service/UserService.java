@@ -2,10 +2,11 @@ package com.connecthub.modules.features.user.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
-import com.connecthub.modules.features.notification.entity.Notification;
 import com.connecthub.modules.features.notification.enums.NotificationType;
+import com.connecthub.modules.features.notification.event.NotificationEvent;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
-import com.connecthub.modules.features.social.dto.FollowStats;
+import com.connecthub.modules.features.notification.service.NotificationService;
+import com.connecthub.modules.features.user.dto.response.FollowStatsResponse;
 import com.connecthub.modules.features.social.entity.Follow;
 import com.connecthub.modules.features.social.repository.FollowRepository;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
@@ -21,8 +22,6 @@ import com.connecthub.modules.features.user.mapper.UserMapper;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
-import com.connecthub.common.exception.AppException;
-import com.connecthub.common.exception.ErrorCode;
 
 import com.connecthub.common.service.MediaStorageService;
 import com.connecthub.common.dto.response.UploadMediaResponse;
@@ -34,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -48,6 +48,7 @@ public class UserService {
     private final NotificationRepository notificationRepository;
     private final MediaStorageService mediaStorageService;
     private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L; // 5 MB
+    private final NotificationService notificationService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void lockUser(String username) {
@@ -78,6 +79,7 @@ public class UserService {
     public CursorResponse<UserSummaryResponse> getFollowers(UUID userId, UUID cursor, int size) {
         return buildFollowersResponse(userId, cursor, size);
     }
+
     // lấy danh sách followers của người dùng hiện tại (USER)
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
@@ -100,6 +102,7 @@ public class UserService {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
         return buildFollowingResponse(currentUserId, cursor, size);
     }
+
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public FollowResponse followUser(UUID targetUserId) {
@@ -108,12 +111,7 @@ public class UserService {
             throw new ConflictUserException();
         }
         if (followRepository.existsByFollowerIdAndFollowingId(currentUserId, targetUserId)) {
-            return FollowResponse.builder()
-                    .followerId(currentUserId)
-                    .followingId(targetUserId)
-                    .message("Already following this user")
-                    .success(false)
-                    .build();
+            throw new UserAlreadyFollowedException();
         }
 
         User currentUser = getUserByIdOrThrow(currentUserId);
@@ -124,19 +122,22 @@ public class UserService {
                 .following(targetUser)
                 .build());
 
-        notificationRepository.save(Notification.builder()
-                .id(AppUtil.generateUUID())
-                .recipient(targetUser)
-                .actor(currentUser)
-                .content(currentUser.getFullName() + " started following you")
+        // push notification to target user
+        notificationService.pushNotification(NotificationEvent.builder()
+                .recipientId(targetUserId)
+                .content(currentUser.getUsername() + " started following you.")
+                .createdAt(LocalDateTime.now())
+                .actor(com.connecthub.modules.features.notification.dto.response.UserSummaryResponse.builder()
+                        .avatarUrl(currentUser.getAvatarUrl())
+                        .username(currentUser.getUsername())
+                        .id(currentUserId)
+                        .build())
+                .entityId(currentUserId)
                 .type(NotificationType.FOLLOW)
-                .isRead(false)
                 .build());
-
         return FollowResponse.builder()
                 .followerId(currentUserId)
                 .followingId(targetUserId)
-                .message("Successfully followed user")
                 .success(true)
                 .build();
     }
@@ -150,17 +151,17 @@ public class UserService {
         }
         if (!followRepository.existsByFollowerIdAndFollowingId(currentUserId, targetUserId)) {
 
-             throw new UserNotFoundException();
+            throw new UserNotFoundException();
         }
 
         followRepository.deleteByFollowerIdAndFollowingId(currentUserId, targetUserId);
         return FollowResponse.builder()
                 .followerId(currentUserId)
                 .followingId(targetUserId)
-                .message("Successfully unfollowed user")
                 .success(true)
                 .build();
     }
+
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public UserResponse updateUser(UserUpdateRequest request) {
@@ -215,7 +216,7 @@ public class UserService {
                 try {
                     mediaStorageService.delete(currentUser.getPublicAvtId());
                 } catch (Exception ex) {
-                  throw new UploadMediaException();
+                    throw new UploadMediaException();
                 }
             }
 
@@ -260,16 +261,17 @@ public class UserService {
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
-    public FollowStats getStats() {
+    public FollowStatsResponse getStats() {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
         return buildUserStats(currentUserId);
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Transactional(readOnly = true)
-    public FollowStats getStats(UUID userId) {
+    public FollowStatsResponse getStats(UUID userId) {
         return buildUserStats(userId);
     }
+
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     private User getUserByIdOrThrow(UUID id) {
         return userRepository.findById(id)
@@ -284,7 +286,7 @@ public class UserService {
 
     private CursorResponse<UserSummaryResponse> buildFollowersResponse(UUID userId, UUID cursor, int size) {
 
-        if(!userRepository.existsById(userId)){
+        if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
         }
         List<Follow> follows = new ArrayList<>(followRepository.findFollowersOptimized(userId, cursor, Limit.of(size + 1)));
@@ -302,7 +304,7 @@ public class UserService {
     }
 
     private CursorResponse<UserSummaryResponse> buildFollowingResponse(UUID userId, UUID cursor, int size) {
-        if(!userRepository.existsById(userId)){
+        if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
         }
 
@@ -320,15 +322,13 @@ public class UserService {
                 .build();
     }
 
-    private FollowStats buildUserStats(UUID userId) {
+    private FollowStatsResponse buildUserStats(UUID userId) {
         // kiểm tra user tồn tại trước khi đếm để tránh trả về 0 cho user không tồn tại
         if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException();
         }
-        FollowStats stats =userRepository.countFollowStats(userId);
-        return stats != null ? stats : new FollowStats(0L, 0L);
-
-
+        FollowStatsResponse stats = userRepository.countFollowStats(userId);
+        return stats != null ? stats : new FollowStatsResponse(0L, 0L);
     }
 
 }

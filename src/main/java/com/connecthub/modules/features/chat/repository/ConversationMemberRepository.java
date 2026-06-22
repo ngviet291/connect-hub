@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Repository
@@ -18,4 +19,6 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     Optional<ConversationMember> findByConversationAndUserNot(
             @Param("conversation") Conversation conversation,
             @Param("user") User user);
+
+    Optional<ConversationMember> findConversationMemberByConversationIdAndUserId(UUID conversationId, UUID userId);
 }

@@ -2,6 +2,7 @@ package com.connecthub.modules.features.notification.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.common.websocket.event.DomainEvent;
 import com.connecthub.modules.features.chat.entity.Conversation;
 import com.connecthub.modules.features.chat.exception.ConversationNotFoundException;
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
@@ -20,6 +21,7 @@ import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final ConversationRepository conversationRepository;
     private final PostRepository postRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -98,12 +101,12 @@ public class NotificationService {
 
     /**
      * Chỉ cho phép các service khác gọi, không cho phép người dùng trực tiếp gọi API này
+     *
      * @param request
      * @return
      */
     @Transactional
     public NotificationResponse createNotification(NotificationRequest request) {
-        //
         User recipient = userRepository.getReferenceById(request.getRecipient());
 
         User actor = userRepository.getReferenceById(request.getActor());
@@ -148,4 +151,7 @@ public class NotificationService {
         return notificationMapper.toNotificationResponse(notification);
     }
 
+    public void pushNotification(DomainEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
 }

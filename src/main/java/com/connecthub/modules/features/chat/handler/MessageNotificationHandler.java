@@ -31,9 +31,16 @@ public class MessageNotificationHandler implements EventHandler<MessageNotificat
                 .build();
 
         notificationService.createNotification(notificationRequest);
-
+        // 1) Broadcast cho ai ĐÃ subscribe đúng topic của conversation này
+        //    (đang mở chat realtime trong room đó).
         String destination = "/topic/conversations/" + event.getMessage().getConversationId() + "/messages";
         simpMessagingTemplate.convertAndSend(destination, event);
+
+        simpMessagingTemplate.convertAndSendToUser(
+                event.getRecipientId().toString(),
+                "/queue/messages",
+                event
+        );
     }
 
 

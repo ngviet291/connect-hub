@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.chat.entity;
 
 import com.connecthub.common.entity.BaseEntity;
+import com.connecthub.modules.features.chat.enums.MemberRole;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.user.entity.User;
 import jakarta.persistence.*;
@@ -31,6 +32,9 @@ public class ConversationMember extends BaseEntity {
     @Builder.Default
     private MemberStatus status = MemberStatus.PENDING;  // mặc định PENDING
 
+    // chỉ có giá trị khi là thành viên của GROUP, với PRIVATE luôn null
+    @Enumerated(EnumType.STRING)
+    private MemberRole role;
 
 
     @Data

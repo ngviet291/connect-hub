@@ -10,4 +10,5 @@ import java.util.UUID;
 
 @Repository
 public interface UserBlockRepository extends JpaRepository<UserBlock, UUID> {
+    boolean existsByBlockedIdAndBlockerId(UUID blockedId, UUID blockerId);
 }

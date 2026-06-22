@@ -7,6 +7,4 @@ import java.util.UUID;
 
 public interface WebSocketService {
     void pushMessage(UUID recipientId, MessageResponse message);
-
-    void pushPendingNotification(UUID recipientId, Conversation conversation);
 }

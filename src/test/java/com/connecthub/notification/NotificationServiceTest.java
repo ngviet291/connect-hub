@@ -5,6 +5,7 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.notification.dto.response.NotificationResponse;
 import com.connecthub.modules.features.notification.dto.response.NotificationUnreadResponse;
 import com.connecthub.modules.features.notification.entity.Notification;
+import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.exception.NotificationNotFoundException;
 import com.connecthub.modules.features.notification.mapper.NotificationMapper;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
@@ -159,11 +160,11 @@ class NotificationServiceTest {
             int size = 5;
 
             // Mock DB trả về rỗng
-            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientIdAndType(eq(MOCK_USER_ID), eq(cursor), any(Limit.class), any(NotificationType.class)))
                     .thenReturn(Collections.emptyList());
 
             // Call
-            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size);
+            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size, NotificationType.MESSAGE_PENDING);
 
             // Assert
             assertNotNull(response);
@@ -177,7 +178,6 @@ class NotificationServiceTest {
         void getNotification_HasNextFalse() {
             UUID cursor = UUID.randomUUID();
             int size = 2;
-
             Notification n1 = Notification.builder().id(UUID.randomUUID()).build();
             Notification n2 = Notification.builder().id(UUID.randomUUID()).build();
             List<Notification> mockDbResult = List.of(n1, n2); // đúng bằng size = 2
@@ -185,20 +185,20 @@ class NotificationServiceTest {
             NotificationResponse res1 = new NotificationResponse();
             NotificationResponse res2 = new NotificationResponse();
 
-            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientIdAndType(eq(MOCK_USER_ID), eq(cursor), any(Limit.class), any(NotificationType.class)))
                     .thenReturn(mockDbResult);
             when(notificationMapper.toNotificationResponse(n1)).thenReturn(res1);
             when(notificationMapper.toNotificationResponse(n2)).thenReturn(res2);
 
             // Call
-            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size);
+            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size, NotificationType.LIKE);
 
             // Assert
             assertNotNull(response);
             assertEquals(2, response.getContent().size());
             assertFalse(response.isHasNext());
             assertEquals(n2.getId().toString(), response.getNextCursor()); // Phần tử cuối làm cursor
-            verify(notificationRepository).findByRecipientId(MOCK_USER_ID, cursor, Limit.of(size + 1));
+            verify(notificationRepository).findByRecipientIdAndType(MOCK_USER_ID, cursor, Limit.of(size + 1), NotificationType.LIKE);
         }
 
         @Test
@@ -217,13 +217,13 @@ class NotificationServiceTest {
             NotificationResponse res1 = new NotificationResponse();
             NotificationResponse res2 = new NotificationResponse();
 
-            when(notificationRepository.findByRecipientId(eq(MOCK_USER_ID), eq(cursor), any(Limit.class)))
+            when(notificationRepository.findByRecipientIdAndType(eq(MOCK_USER_ID), eq(cursor), any(Limit.class), any(NotificationType.class)))
                     .thenReturn(mockDbResult);
             when(notificationMapper.toNotificationResponse(n1)).thenReturn(res1);
             when(notificationMapper.toNotificationResponse(n2)).thenReturn(res2);
 
             // Call
-            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size);
+            CursorResponse<NotificationResponse> response = notificationService.getNotification(cursor, size,  NotificationType.LIKE);
 
             // Assert
             assertNotNull(response);
