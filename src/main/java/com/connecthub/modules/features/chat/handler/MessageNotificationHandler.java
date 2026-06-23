@@ -20,7 +20,6 @@ public class MessageNotificationHandler implements EventHandler<MessageNotificat
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final NotificationService notificationService;
     private final DeliveryTrackingService deliveryTrackingService;
-    private final MessageRepository messageRepository;
 
     @Override
     public Class<MessageNotificationEvent> support() {

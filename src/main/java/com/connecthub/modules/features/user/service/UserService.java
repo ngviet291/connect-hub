@@ -2,6 +2,7 @@ package com.connecthub.modules.features.user.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.notification.dto.response.NotificationUserSummaryResponse;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.event.NotificationEvent;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
@@ -127,7 +128,7 @@ public class UserService {
                 .recipientId(targetUserId)
                 .content(currentUser.getUsername() + " started following you.")
                 .createdAt(LocalDateTime.now())
-                .actor(com.connecthub.modules.features.notification.dto.response.UserSummaryResponse.builder()
+                .actor(NotificationUserSummaryResponse.builder()
                         .avatarUrl(currentUser.getAvatarUrl())
                         .username(currentUser.getUsername())
                         .id(currentUserId)

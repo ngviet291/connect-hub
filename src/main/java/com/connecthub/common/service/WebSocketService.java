@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface WebSocketService {
 
     void pushMessage(UUID recipientId, MessageResponse message, ConversationType conversationType);
+
+    void pushGroupMessage(UUID id, MessageResponse response);
 }

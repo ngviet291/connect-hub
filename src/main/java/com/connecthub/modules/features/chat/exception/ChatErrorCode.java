@@ -15,7 +15,10 @@ public enum ChatErrorCode implements BaseErrorCode {
     CONVERSATION_MEMBER_NOT_FOUND("Conversation member not found", HttpStatus.NOT_FOUND),
     RECIPIENT_BLOCKED("You have blocked this user", HttpStatus.FORBIDDEN),
     BLOCKED_BY_SENDER("You have been blocked by this user", HttpStatus.FORBIDDEN),
-    MESSAGE_NOT_FOUND("Message {messageId} not found", HttpStatus.NOT_FOUND);
+    MESSAGE_NOT_FOUND("Message {messageId} not found", HttpStatus.NOT_FOUND),
+    CONVERSATION_ACCESS_DENIED("You do not have access to this conversation", HttpStatus.FORBIDDEN),
+    GROUP_MEMBER_LIMIT_EXCEEDED("Group member limit of {maxGroupMember} exceeded", HttpStatus.BAD_REQUEST),
+    RECIPIENT_NOT_PROVIDED("Recipient not provided", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus statusCode;

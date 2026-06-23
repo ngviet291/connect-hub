@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 @Builder
-public class UserSummaryResponse {
+public class NotificationUserSummaryResponse {
     private UUID id;
     private String username;
     private String avatarUrl;

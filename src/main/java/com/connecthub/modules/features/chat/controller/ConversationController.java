@@ -3,10 +3,9 @@ package com.connecthub.modules.features.chat.controller;
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.chat.dto.request.AcceptConversationRequest;
+import com.connecthub.modules.features.chat.dto.request.CreateGroupConversationRequest;
 import com.connecthub.modules.features.chat.dto.response.ConversationDetailResponse;
-import com.connecthub.modules.features.chat.dto.response.ConversationResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResponse;
-import com.connecthub.modules.features.chat.entity.Conversation;
 import com.connecthub.modules.features.chat.enums.ChatResponseCode;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.chat.service.ChatService;
@@ -14,6 +13,7 @@ import com.connecthub.modules.features.chat.service.ConversationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -26,9 +26,12 @@ public class ConversationController {
     private final ChatService chatService;
 
     @PatchMapping("/accept")
-    public void acceptConversationRequest(AcceptConversationRequest request) {
+    public ApiResponse<Void> acceptConversationRequest(@RequestBody AcceptConversationRequest request) {
         conversationService.acceptConversationMember(request);
-        // Implementation for accepting a conversation request
+        return ApiResponse.<Void>builder()
+                .code(ChatResponseCode.ACCEPT_CONVERSATION_REQUEST_SUCCESS.getCode())
+                .message(ChatResponseCode.ACCEPT_CONVERSATION_REQUEST_SUCCESS.getMessage())
+                .build();
     }
 
     @GetMapping
@@ -49,7 +52,7 @@ public class ConversationController {
         return ApiResponse.<ConversationDetailResponse>builder()
                 .code(ChatResponseCode.GET_CONVERSATION_DETAIL_SUCCESS.getCode())
                 .message(ChatResponseCode.GET_CONVERSATION_DETAIL_SUCCESS.getMessage())
-//                .data(conversationService.getConversationDetail(id))
+                .data(conversationService.getConversationDetail(id))
                 .build();
     }
 
@@ -62,6 +65,16 @@ public class ConversationController {
         return ApiResponse.<Void>builder()
                 .code(ChatResponseCode.MARK_AS_READ_SUCCESS.getCode())
                 .message(ChatResponseCode.MARK_AS_READ_SUCCESS.getMessage())
+                .build();
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/group")
+    public ApiResponse<ConversationSummaryResponse> createPublicConversation(@RequestBody CreateGroupConversationRequest request) {
+        return ApiResponse.<ConversationSummaryResponse>builder()
+                .code(ChatResponseCode.CREATE_CONVERSATION_SUCCESS.getCode())
+                .message(ChatResponseCode.CREATE_CONVERSATION_SUCCESS.getMessage())
+                .data(conversationService.createGroupConversation(request))
                 .build();
     }
 }

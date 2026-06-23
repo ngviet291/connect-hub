@@ -45,5 +45,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             @Param("status") MemberStatus status
     );
 
+    @Query("""
+    SELECT c FROM Conversation c
+    LEFT JOIN FETCH c.conversationMembers cm
+    LEFT JOIN FETCH cm.user
+    WHERE c.id = :id
+    """)
+    Optional<Conversation> findByIdWithMembers(@Param("id") UUID id);
 
 }
