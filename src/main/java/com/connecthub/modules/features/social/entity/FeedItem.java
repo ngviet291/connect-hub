@@ -19,10 +19,10 @@ import java.util.UUID;
 public class FeedItem extends BaseEntity {
     @Id
     private UUID id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
     private double score; // Relevance score for ranking

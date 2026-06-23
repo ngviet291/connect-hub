@@ -19,10 +19,10 @@ import java.util.UUID;
 public class UserBlock extends BaseEntity {
     @Id
     private UUID id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "blocker_id")
     private User blocker; // User who blocks
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "blocked_id")
     private User blocked; // User who is blocked
 }
