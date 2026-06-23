@@ -13,12 +13,15 @@ import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
+import com.connecthub.modules.features.user.dto.response.BlockStatusResponse;
 
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.enums.UserStatus;
 import com.connecthub.modules.features.user.exception.*;
 import com.connecthub.modules.features.user.mapper.UserMapper;
+import com.connecthub.modules.features.user.entity.UserBlock;
+import com.connecthub.modules.features.user.repository.UserBlockRepository;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,6 +52,7 @@ public class UserService {
     private final MediaStorageService mediaStorageService;
     private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L; // 5 MB
     private final NotificationService notificationService;
+    private final UserBlockRepository userBlockRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void lockUser(String username) {
@@ -330,5 +334,99 @@ public class UserService {
         FollowStatsResponse stats = userRepository.countFollowStats(userId);
         return stats != null ? stats : new FollowStatsResponse(0L, 0L);
     }
+    // block user by id
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional
+    public UserResponse blockUser(UUID id) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
 
+        if (currentUserId.equals(id)) {
+            throw new ConflictUserException();
+        }
+
+        // Kiểm tra sự tồn tại của user bị chặn
+        User blockedUser = userRepository.findById(id)
+                .orElseThrow(UserNotFoundException::new);
+
+        // Lấy thông tin user hiện tại (người chặn)
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(UserNotFoundException::new);
+
+        // Kiểm tra nếu đã chặn rồi
+        boolean alreadyBlocked = userBlockRepository.existsByBlockedIdAndBlockerId(id, currentUserId);
+        if (!alreadyBlocked) {
+            UserBlock userBlock = UserBlock.builder()
+                    .id(AppUtil.generateUUID())
+                    .blocker(currentUser)
+                    .blocked(blockedUser)
+                    .build();
+            userBlockRepository.save(userBlock);
+
+            // Xóa mối quan hệ follow giữa hai người (nếu có)
+            followRepository.deleteByFollowerIdAndFollowingId(currentUserId, id);
+            followRepository.deleteByFollowerIdAndFollowingId(id, currentUserId);
+        }
+
+        return userMapper.toUserResponse(blockedUser);
+    }
+    // unblock user
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional
+    public UserResponse unblockUser(UUID id) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        // Kiểm tra sự tồn tại của user bị chặn
+        User blockedUser = userRepository.findById(id)
+                .orElseThrow(UserNotFoundException::new);
+        // kiểm tra xem có block hay k
+        boolean isBlock =userBlockRepository.existsByBlockedIdAndBlockerId(currentUserId, id);
+        if(!isBlock){
+            throw new UserNotBlockedException();
+        }
+        // Xóa mối quan hệ block
+        userBlockRepository.deleteByBlockedIdAndBlockerId(id, currentUserId);
+        return userMapper.toUserResponse(blockedUser);
+    }
+        @PreAuthorize("hasRole('ROLE_USER')")
+        // get list blocked users by current user(lấy danh sách người dùng bị chặn bởi người dùng hiện tại)
+        @Transactional(readOnly = true)
+        public CursorResponse<UserSummaryResponse> getBlockedUsers(UUID cursor, int size) {
+            UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+            List<UserBlock> blockedUsers = new ArrayList<>(
+                    userBlockRepository.findBlockedUsers(currentUserId, cursor, Limit.of(size + 1))
+            );
+
+            boolean hasNext = blockedUsers.size() > size;
+            if (hasNext) {
+                blockedUsers.removeLast();
+            }
+
+            String nextCursor = blockedUsers.isEmpty() ? null : blockedUsers.getLast().getId().toString();
+            List<UserSummaryResponse> blockedUserResponses = blockedUsers.stream()
+                    .map(userBlock -> userMapper.toUserSummaryResponse(userBlock.getBlocked()))
+                    .toList();
+
+            return CursorResponse.<UserSummaryResponse>builder()
+                    .content(blockedUserResponses)
+                    .hasNext(hasNext)
+                    .nextCursor(nextCursor)
+                    .build();
+        }
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional(readOnly = true)
+    // kiểm tra trạng thái block của người dùng hiện tại với một người dùng khác
+    public BlockStatusResponse isBlockingUser(UUID targetUserId) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        if (!userRepository.existsById(targetUserId)) {
+            throw new UserNotFoundException();
+        }
+
+        boolean isBlocked = userBlockRepository.existsByBlockedIdAndBlockerId(targetUserId, currentUserId);
+        return BlockStatusResponse.builder()
+                .isBlocked(isBlocked)
+                .build();
+    }
 }

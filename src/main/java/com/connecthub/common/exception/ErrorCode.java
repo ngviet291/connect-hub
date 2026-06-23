@@ -39,6 +39,7 @@ public enum ErrorCode implements BaseErrorCode {
     FILE_NOT_FOUND("File not found", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED("File size exceeded the limit", HttpStatus.BAD_REQUEST),
     INVALID_FILE_TYPE("Invalid file type", HttpStatus.BAD_REQUEST),
+    USER_NOT_BLOCKED("User is not blocked", HttpStatus.BAD_REQUEST)
     ;
 
 

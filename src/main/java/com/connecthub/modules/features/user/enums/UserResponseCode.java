@@ -12,6 +12,10 @@ public enum UserResponseCode {
     UPDATE_USER_SUCCESS(3005, "User updated successfully"),
     UPDATE_USER_STATUS_SUCCESS(3006, "User status updated successfully"),
     GET_USER_STATS_SUCCESS(3007, "User stats retrieved successfully"),
+    BLOCK_USER_SUCCESS(3009, "User blocked successfully"),
+    UNBLOCK_USER_SUCCESS(3010, "User unblocked successfully"),
+    GET_BLOCKED_USERS_SUCCESS(3011, "Blocked users retrieved successfully"),
+    GET_BLOCK_STATUS_SUCCESS(3012, "Check block status successfully"),
     GET_ALL_USERS_SUCCESS(3008, "All users retrieved successfully");
     private final int code;
     private final String message;
