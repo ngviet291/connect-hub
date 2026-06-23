@@ -21,4 +21,9 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
             @Param("user") User user);
 
     Optional<ConversationMember> findConversationMemberByConversationIdAndUserId(UUID conversationId, UUID userId);
+
+    Optional<ConversationMember> findByConversationIdAndUserIdNot(UUID conversationId, UUID userId);
+
+    Optional<ConversationMember> findByConversationIdAndUserId(UUID conversationId, UUID userId);
+
 }

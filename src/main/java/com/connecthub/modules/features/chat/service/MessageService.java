@@ -30,15 +30,17 @@ public class MessageService {
                 .sender(user)
                 .content(request.getContent())
                 .build();
+
         if (request.getReplyToMessageId() != null) {
             Message replyToMessage = messageRepository.findById(request.getReplyToMessageId())
                     .orElseThrow(() -> new ReplyToMessageNotFoundException(request.getReplyToMessageId().toString()));
             message.setReplyTo(replyToMessage);
         }
+
         boolean hasMedia = request.getMedia() != null && !request.getMedia().isEmpty();
         messageRepository.save(message);
-        if  (hasMedia) {
 
+        if (hasMedia) {
             List<MessageMedia> mediaList = request.getMedia().stream()
                     .map(mediaRequest -> MessageMedia.builder()
                             .id(AppUtil.generateUUID())
@@ -49,7 +51,13 @@ public class MessageService {
                     .toList();
             messageMediaRepository.saveAll(mediaList);
         }
+
+        // Không tạo MessageReceipt ở đây. SENT được suy ra từ việc Message
+        // tồn tại; DELIVERED ghi đúng lúc push WS thành công (xem
+        // DeliveryTrackingService.markDelivered), không phải lúc gửi.
         return message;
     }
+
+
 
 }

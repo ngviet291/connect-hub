@@ -52,4 +52,16 @@ public class ConversationController {
 //                .data(conversationService.getConversationDetail(id))
                 .build();
     }
+
+    @PutMapping("/{conversationId}/read")
+    public ApiResponse<Void> markAsRead(
+            @PathVariable UUID conversationId,
+            @RequestParam UUID lastMessageId
+    ) {
+        chatService.markConversationAsRead(conversationId, lastMessageId);
+        return ApiResponse.<Void>builder()
+                .code(ChatResponseCode.MARK_AS_READ_SUCCESS.getCode())
+                .message(ChatResponseCode.MARK_AS_READ_SUCCESS.getMessage())
+                .build();
+    }
 }

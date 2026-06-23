@@ -7,6 +7,7 @@ import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResp
 import com.connecthub.modules.features.chat.entity.Conversation;
 import com.connecthub.modules.features.chat.entity.ConversationMember;
 import com.connecthub.modules.features.chat.entity.Message;
+import com.connecthub.modules.features.chat.entity.MessageReceipt;
 import com.connecthub.modules.features.chat.enums.ConversationType;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.chat.enums.MessageStatus;
@@ -89,30 +90,26 @@ public class ConversationService {
         );
 
         List<UUID> conversationIds = conversations.stream().map(Conversation::getId).toList();
-
-        // 2 query cho CẢ BATCH, không phải 1 query/conversation — tránh N+1
         Map<UUID, Message> lastMessageByConvId = findLastMessages(conversationIds);
-        Map<UUID, Long> unreadCountByConvId = countUnreadBatch(conversationIds, currentUserId);
 
         return AppUtil.buildCursorResponse(
                 conversations, size, Conversation::getId,
-                conv -> toSummaryResponse(
-                        conv,
-                        currentUserId,
-                        lastMessageByConvId.get(conv.getId()),
-                        unreadCountByConvId.getOrDefault(conv.getId(), 0L)
-                )
+                conv -> toSummaryResponse(conv, currentUserId, lastMessageByConvId.get(conv.getId()))
         );
     }
 
     private ConversationSummaryResponse toSummaryResponse(
-            Conversation conv, UUID currentUserId, Message lastMessage, long unreadCount
+            Conversation conv, UUID currentUserId, Message lastMessage
     ) {
-        // Chỉ tìm member 1 lần, dùng lại cho cả myStatus và (nếu PRIVATE) peer.
         ConversationMember myMember = getMyMember(conv, currentUserId);
         ConversationMember peerMember = conv.getType() == ConversationType.PRIVATE
                 ? getPeerMember(conv, currentUserId)
                 : null;
+
+        UUID lastReadId = myMember.getLastReadMessage() != null
+                ? myMember.getLastReadMessage().getId()
+                : null;
+        long unreadCount = messageRepository.countUnreadSinceLastRead(conv.getId(), currentUserId, lastReadId);
 
         ConversationSummaryResponse.ConversationSummaryResponseBuilder builder =
                 ConversationSummaryResponse.builder()
@@ -127,7 +124,8 @@ public class ConversationService {
             builder.lastMessageId(lastMessage.getId())
                     .lastMessageContent(lastMessage.getContent())
                     .lastMessageSenderUsername(lastMessage.getSender().getUsername())
-                    .lastMessageAt(lastMessage.getCreatedAt());
+                    .lastMessageAt(lastMessage.getCreatedAt())
+                    .lastMessageStatus(resolveLastMessageStatus(conv, lastMessage, lastReadId));
         }
 
         if (peerMember != null) {
@@ -137,33 +135,32 @@ public class ConversationService {
         return builder.build();
     }
 
-    // Nhận sẵn peerMember (null nếu GROUP) để không phải tự tìm lại trong stream.
-    private String resolveDisplayName(Conversation conversation, ConversationMember peerMember) {
-        if (conversation.getType() == ConversationType.PRIVATE) {
-            return peerMember.getUser().getUsername();
+    // PRIVATE: nếu mình đã đọc tới >= tin cuối → READ. Nếu chưa, tra receipt
+// để biết SENT/DELIVERED. GROUP: chỉ SENT/DELIVERED dựa vào deliveredAt,
+// không có READ theo từng người.
+    private MessageStatus resolveLastMessageStatus(Conversation conv, Message lastMessage, UUID lastReadId) {
+        if (conv.getType() == ConversationType.PRIVATE) {
+            if (lastReadId != null && lastMessage.getId().compareTo(lastReadId) <= 0) {
+                return MessageStatus.READ;
+            }
+            return messageReceiptRepository
+                    .findByMessageIdAndUserId(lastMessage.getId(), getOtherPartyId(conv, lastMessage))
+                    .map(MessageReceipt::getStatus)
+                    .orElse(MessageStatus.SENT);
         }
-
-        if (conversation.getName() != null && !conversation.getName().isBlank()) {
-            return conversation.getName();
-        }
-
-        List<String> otherUsernames = conversation.getConversationMembers().stream()
-                .map(ConversationMember::getUser)
-                .filter(user -> !user.getId().equals(AppUtil.userIdFormAuthentication()))
-                .map(User::getUsername)
-                .limit(3)
-                .toList();
-
-        int remaining = conversation.getConversationMembers().size() - 1 - otherUsernames.size();
-        String base = String.join(", ", otherUsernames);
-        return remaining > 0 ? base + " và " + remaining + " người khác" : base;
+        return lastMessage.getDeliveredAt() != null ? MessageStatus.DELIVERED : MessageStatus.SENT;
     }
 
-    private String resolveDisplayAvatar(Conversation conv, ConversationMember peerMember) {
-        if (conv.getType() == ConversationType.PRIVATE) {
-            return peerMember.getUser().getAvatarUrl();
-        }
-        return conv.getAvatarUrl();
+    private UUID getOtherPartyId(Conversation conv, Message lastMessage) {
+        // Trạng thái hiển thị nên là góc nhìn "đối phương đã nhận tin của tôi
+        // chưa", áp dụng khi chính mình là sender của lastMessage.
+        return getPeerMember(conv, lastMessage.getSender().getId()).getUser().getId();
+    }
+
+    private Map<UUID, Message> findLastMessages(List<UUID> conversationIds) {
+        if (conversationIds.isEmpty()) return Map.of();
+        return messageRepository.findLastMessagesForConversations(conversationIds).stream()
+                .collect(Collectors.toMap(m -> m.getConversation().getId(), m -> m, (a, b) -> a));
     }
 
     private ConversationMember getMyMember(Conversation conversation, UUID currentUserId) {
@@ -173,7 +170,6 @@ public class ConversationService {
                 .orElseThrow(SenderNotConversationMemberException::new);
     }
 
-    // Chỉ dùng cho PRIVATE — group có nhiều "đối phương", không có 1 peer duy nhất.
     private ConversationMember getPeerMember(Conversation conversation, UUID currentUserId) {
         if (conversation.getType() != ConversationType.PRIVATE) {
             throw new InvalidTypeConversionException(ConversationType.PRIVATE);
@@ -184,20 +180,30 @@ public class ConversationService {
                 .orElseThrow(SenderNotConversationMemberException::new);
     }
 
-    private Map<UUID, Message> findLastMessages(List<UUID> conversationIds) {
-        if (conversationIds.isEmpty()) return Map.of();
-        return messageRepository.findLastMessagesForConversations(conversationIds).stream()
-                .collect(Collectors.toMap(m -> m.getConversation().getId(), m -> m, (a, b) -> a));
+    private String resolveDisplayName(Conversation conversation, ConversationMember peerMember) {
+        String format =  "%s và %d người khác";
+        if (conversation.getType() == ConversationType.PRIVATE) {
+            return peerMember.getUser().getUsername();
+        }
+        if (conversation.getName() != null && !conversation.getName().isBlank()) {
+            return conversation.getName();
+        }
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        List<String> otherUsernames = conversation.getConversationMembers().stream()
+                .map(ConversationMember::getUser)
+                .filter(user -> !user.getId().equals(currentUserId))
+                .map(User::getUsername)
+                .limit(3)
+                .toList();
+        int remaining = conversation.getConversationMembers().size() - 1 - otherUsernames.size();
+        String base = String.join(", ", otherUsernames);
+        return remaining > 0 ? String.format(format, base, remaining) : base;
     }
 
-    private Map<UUID, Long> countUnreadBatch(List<UUID> conversationIds, UUID userId) {
-        if (conversationIds.isEmpty()) return Map.of();
-        return messageReceiptRepository
-                .countUnreadGroupedByConversation(conversationIds, userId, MessageStatus.READ)
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (UUID) row[0],
-                        row -> (Long) row[1]
-                ));
+    private String resolveDisplayAvatar(Conversation conv, ConversationMember peerMember) {
+        if (conv.getType() == ConversationType.PRIVATE) {
+            return peerMember.getUser().getAvatarUrl();
+        }
+        return conv.getAvatarUrl();
     }
 }

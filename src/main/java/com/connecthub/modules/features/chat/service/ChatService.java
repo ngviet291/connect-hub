@@ -14,6 +14,7 @@ import com.connecthub.modules.features.chat.exception.*;
 import com.connecthub.modules.features.chat.mapper.MessageMapper;
 import com.connecthub.modules.features.chat.repository.ConversationMemberRepository;
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
+import com.connecthub.modules.features.chat.repository.MessageRepository;
 import com.connecthub.modules.features.notification.event.NotificationEvent;
 import com.connecthub.modules.features.notification.service.NotificationService;
 import com.connecthub.modules.features.social.service.FollowService;
@@ -46,6 +47,8 @@ public class ChatService {
     private final WebSocketService webSocketService;
     private final UserBlockService userBlockService;
     private final NotificationService notificationService;
+    private final MessageRepository messageRepository;
+    private final DeliveryTrackingService deliveryTrackingService;
 
     @Transactional
     @PreAuthorize("hasRole('USER')")
@@ -78,7 +81,7 @@ public class ChatService {
                 message, message.getSender(), conversation, recipientStatus, MessageStatus.SENT
         );
 
-        pushToRecipient(recipientId, recipientStatus, response);
+        pushToRecipient(conversation, recipientId, recipientStatus, response);
         return response;
     }
 
@@ -97,7 +100,7 @@ public class ChatService {
                 message, message.getSender(), conversation, recipientStatus, MessageStatus.SENT
         );
 
-        pushToRecipient(request.getRecipientId(), recipientStatus, response);
+        pushToRecipient(conversation, request.getRecipientId(), recipientStatus, response);
         return response;
     }
 
@@ -139,10 +142,31 @@ public class ChatService {
         return status;
     }
 
-    private void pushToRecipient(UUID recipientId, MemberStatus status, MessageResponse response) {
+
+    @Transactional
+    public void markConversationAsRead(UUID conversationId, UUID lastMessageId) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        ConversationMember member = conversationMemberRepository
+                .findByConversationIdAndUserId(conversationId, currentUserId)
+                .orElseThrow(SenderNotConversationMemberException::new);
+
+        Message lastMessage = messageRepository.findById(lastMessageId)
+                .orElseThrow(() -> new MessageNotFoundException(lastMessageId.toString()));
+
+        // Chỉ cập nhật nếu lastMessageId mới hơn con trỏ hiện tại — tránh
+        // 1 request cũ (vd do retry/race condition) kéo lùi trạng thái đọc.
+        if (member.getLastReadMessage() == null
+                || lastMessage.getId().compareTo(member.getLastReadMessage().getId()) > 0) {
+            member.setLastReadMessage(lastMessage);
+            conversationMemberRepository.save(member);
+        }
+    }
+
+    private void pushToRecipient(Conversation conversation, UUID recipientId, MemberStatus status, MessageResponse response) {
         if (status == MemberStatus.ACCEPTED) {
-            webSocketService.pushMessage(recipientId, response);
-        } else {
+            webSocketService.pushMessage(recipientId, response, conversation.getType());
+        }  else {
             notificationService.pushNotification(
                     NotificationEvent.builder()
                             .recipientId(recipientId)

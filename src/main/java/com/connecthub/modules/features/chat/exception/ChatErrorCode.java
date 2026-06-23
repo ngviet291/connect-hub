@@ -14,7 +14,8 @@ public enum ChatErrorCode implements BaseErrorCode {
     CONVERSATION_NOT_FOUND("Conversation not found", HttpStatus.NOT_FOUND),
     CONVERSATION_MEMBER_NOT_FOUND("Conversation member not found", HttpStatus.NOT_FOUND),
     RECIPIENT_BLOCKED("You have blocked this user", HttpStatus.FORBIDDEN),
-    BLOCKED_BY_SENDER("You have been blocked by this user", HttpStatus.FORBIDDEN);
+    BLOCKED_BY_SENDER("You have been blocked by this user", HttpStatus.FORBIDDEN),
+    MESSAGE_NOT_FOUND("Message {messageId} not found", HttpStatus.NOT_FOUND);
 
     private final String message;
     private final HttpStatus statusCode;

@@ -1,7 +1,11 @@
 package com.connecthub.modules.features.chat.handler;
 
 import com.connecthub.common.websocket.handler.EventHandler;
+import com.connecthub.modules.features.chat.entity.Message;
 import com.connecthub.modules.features.chat.event.MessageNotificationEvent;
+import com.connecthub.modules.features.chat.exception.MessageNotFoundException;
+import com.connecthub.modules.features.chat.repository.MessageRepository;
+import com.connecthub.modules.features.chat.service.DeliveryTrackingService;
 import com.connecthub.modules.features.notification.dto.request.NotificationRequest;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.service.NotificationService;
@@ -15,6 +19,8 @@ public class MessageNotificationHandler implements EventHandler<MessageNotificat
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final NotificationService notificationService;
+    private final DeliveryTrackingService deliveryTrackingService;
+    private final MessageRepository messageRepository;
 
     @Override
     public Class<MessageNotificationEvent> support() {
@@ -41,6 +47,16 @@ public class MessageNotificationHandler implements EventHandler<MessageNotificat
                 "/queue/messages",
                 event
         );
+
+        // Ghi nhận DELIVERED đúng lúc socket thực sự gửi đi — không cần
+        // load lại Message entity, dùng trực tiếp messageId + conversationType
+        // đã có sẵn trong event.
+        deliveryTrackingService.markDelivered(
+                event.getMessage().getMessageId(),
+                event.getConversationType(),
+                event.getRecipientId()
+        );
+
     }
 
 
