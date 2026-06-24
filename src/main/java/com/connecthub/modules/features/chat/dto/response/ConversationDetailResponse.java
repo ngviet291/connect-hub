@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.chat.dto.response;
 
+import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.chat.enums.ConversationType;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import lombok.Builder;
@@ -20,7 +21,7 @@ public class ConversationDetailResponse {
 
     // Đầy đủ thành viên — cần cho group (admin badge, danh sách member),
     // với PRIVATE vẫn trả về (sẽ có đúng 2 entry) để FE dùng chung 1 shape.
-    private List<ConversationMemberResponse> members;
+    private CursorResponse<ConversationMemberResponse> members;
 
     private LocalDateTime createdAt;
 }

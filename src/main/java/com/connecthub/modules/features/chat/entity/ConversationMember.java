@@ -35,7 +35,16 @@ public class ConversationMember extends BaseEntity {
     // chỉ có giá trị khi là thành viên của GROUP, với PRIVATE luôn null
     @Enumerated(EnumType.STRING)
     private MemberRole role;
+    // Con trỏ "đã đọc tới đâu" — dùng chung cho cả PRIVATE và GROUP.
+    // So sánh message.id <= lastReadMessage.id (UUIDv7, sort được theo
+    // thời gian) để biết 1 tin đã được user này đọc hay chưa, KHÔNG cần
+    // 1 row riêng cho mỗi (message, user).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_read_message_id")
+    private Message lastReadMessage;
 
+
+    private LocalDateTime leftAt;
 
     @Data
     @NoArgsConstructor

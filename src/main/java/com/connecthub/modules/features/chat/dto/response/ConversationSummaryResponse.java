@@ -35,7 +35,7 @@ public class ConversationSummaryResponse {
     private LocalDateTime lastMessageAt;
 
     private long unreadCount;
-
+    private MessageStatus lastMessageStatus;  // SENT | DELIVERED | READ
     // Chỉ có ý nghĩa với PRIVATE — id của đối phương để FE điều hướng/thao tác
     // (follow, block...). Null với GROUP.
     private UUID peerId;
