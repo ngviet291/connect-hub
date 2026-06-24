@@ -11,5 +11,7 @@ import java.util.UUID;
 @ToString
 public class CreateGroupConversationRequest {
     private String name;
+
+    // validate that the list of members is not empty and contains at least 2 members
     private List<UUID> members;
 }

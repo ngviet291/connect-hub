@@ -1,9 +1,16 @@
 package com.connecthub.modules.features.chat.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
+import com.connecthub.common.dto.response.UploadMediaResponse;
+import com.connecthub.common.exception.UploadMediaException;
+import com.connecthub.common.service.MediaStorageService;
+import com.connecthub.common.service.WebSocketService;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.chat.dto.request.UpdateConversationRequest;
 import com.connecthub.modules.features.chat.dto.request.AcceptConversationRequest;
+import com.connecthub.modules.features.chat.dto.request.AddMembersRequest;
 import com.connecthub.modules.features.chat.dto.request.CreateGroupConversationRequest;
+import com.connecthub.modules.features.chat.dto.request.UpdateMemberRoleRequest;
 import com.connecthub.modules.features.chat.dto.response.ConversationDetailResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationMemberResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResponse;
@@ -21,15 +28,15 @@ import com.connecthub.modules.features.chat.repository.ConversationMemberReposit
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
 import com.connecthub.modules.features.chat.repository.MessageReceiptRepository;
 import com.connecthub.modules.features.chat.repository.MessageRepository;
-import com.connecthub.modules.features.post.entity.Post;
-import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +54,8 @@ public class ConversationService {
     private final MessageReceiptRepository messageReceiptRepository;
     private final ConversationMapper conversationMapper;
     private final UserRepository userRepository;
+    private final MediaStorageService mediaStorageService;
+    private final WebSocketService webSocketService;
 
     @Value("${app.chat.group.max-members:100}")
     private String MAX_GROUP_MEMBERS;
@@ -82,6 +91,7 @@ public class ConversationService {
         return conversationRepository.save(conversation);
     }
 
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public void acceptConversationMember(AcceptConversationRequest request) {
         ConversationMember member = conversationMemberRepository
@@ -95,6 +105,8 @@ public class ConversationService {
         conversationMemberRepository.save(member);
     }
 
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional(readOnly = true)
     public CursorResponse<ConversationSummaryResponse> getConversations(UUID cursor, int size, MemberStatus status) {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
 
@@ -111,6 +123,7 @@ public class ConversationService {
         );
     }
 
+    //=========================================HELPERS FOR CONVERSATION SUMMARY RESPONSE==================================================//
     private ConversationSummaryResponse toSummaryResponse(
             Conversation conv, UUID currentUserId, Message lastMessage
     ) {
@@ -219,32 +232,40 @@ public class ConversationService {
         }
         return conv.getAvatarUrl();
     }
+//=========================================END=====================================================================//
 
 
-    public ConversationDetailResponse getConversationDetail(UUID id) {
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional(readOnly = true)
+    public ConversationDetailResponse getConversationDetail(UUID id, UUID membersCursor, int membersSize) {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
 
-        Conversation conversation = conversationRepository.findByIdWithMembers(id)
+        Conversation conversation = conversationRepository.findById(id)
                 .orElseThrow(ConversationNotFoundException::new);
 
-        // Member check: 403 nếu không phải thành viên — không dùng try/catch
-        // exception khác (SenderNotConversationMemberException) ở đây vì ngữ
-        // nghĩa khác nhau: đó là lỗi nội bộ (logic sai), còn đây là access
-        // control hợp lệ cần trả đúng mã 403 cho client.
-        boolean isMember = conversation.getConversationMembers().stream()
-                .anyMatch(member -> member.getUser().getId().equals(currentUserId));
-        if (!isMember) {
-            throw new ConversationAccessDeniedException();
-        }
+        ConversationMember myMember = conversationMemberRepository
+                .findConversationMemberByConversationIdAndUserId(id, currentUserId)
+                .filter(m -> m.getStatus() == MemberStatus.ACCEPTED || m.getStatus() == MemberStatus.PENDING)
+                .orElseThrow(ConversationAccessDeniedException::new);
 
-        ConversationMember myMember = getMyMember(conversation, currentUserId);
         ConversationMember peerMember = conversation.getType() == ConversationType.PRIVATE
-                ? getPeerMember(conversation, currentUserId)
+                ? conversationMemberRepository
+                .findConversationMemberByConversationIdAndUserIdNot(id, currentUserId)
+                .orElse(null)
                 : null;
 
-        List<ConversationMemberResponse> members = conversation.getConversationMembers().stream()
-                .map(conversationMapper::toMemberResponse)
-                .toList();
+        // size + 1 để helper tự xác định hasNext
+        Limit limit = Limit.of(membersSize + 1);
+        List<ConversationMember> rawMembers = new ArrayList<>(
+                conversationMemberRepository.findMembersByConversationId(id, membersCursor, limit)
+        );
+
+        CursorResponse<ConversationMemberResponse> membersPage = AppUtil.buildCursorResponse(
+                rawMembers,
+                membersSize,
+                m -> m.getUser().getId(),
+                conversationMapper::toMemberResponse
+        );
 
         return ConversationDetailResponse.builder()
                 .conversationId(conversation.getId())
@@ -252,12 +273,13 @@ public class ConversationService {
                 .displayName(resolveDisplayName(conversation, peerMember))
                 .displayAvatarUrl(resolveDisplayAvatar(conversation, peerMember))
                 .myStatus(myMember.getStatus())
-                .members(members)
+                .members(membersPage)
                 .createdAt(conversation.getCreatedAt())
                 .build();
     }
 
 
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public ConversationSummaryResponse createGroupConversation(CreateGroupConversationRequest request) {
         UUID currentUserId = AppUtil.userIdFormAuthentication();
@@ -345,5 +367,173 @@ public class ConversationService {
                 .map(User::getUsername)
                 .limit(3)
                 .collect(Collectors.joining(", "));
+    }
+
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional
+    public void leaveConversation(UUID conversationId) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        ConversationMember conversationMember = conversationMemberRepository.findConversationMemberByConversationIdAndUserId(
+                        conversationId, currentUserId)
+                .orElseThrow(ConversationMemberNotFoundException::new);
+
+        if (conversationMember.getRole() == MemberRole.ADMIN) {
+            throw new AdminCannotLeaveGroupException();
+        }
+
+        conversationMember.setStatus(MemberStatus.LEFT);
+        conversationMember.setLeftAt(LocalDateTime.now());
+        conversationMemberRepository.save(conversationMember);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @Transactional
+    public void removeMember(UUID conversationId, UUID memberId) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        requireAdmin(conversationId, currentUserId);
+
+        if (memberId.equals(currentUserId)) {
+            throw new InvalidChatRequestException();
+        }
+
+        ConversationMember targetMember = conversationMemberRepository
+                .findConversationMemberByConversationIdAndUserId(
+                        conversationId, memberId)
+                .orElseThrow(ConversationMemberNotFoundException::new);
+
+        if (targetMember.getRole() == MemberRole.ADMIN) {
+            throw new CannotRemoveAdminException();
+        }
+
+        targetMember.setStatus(MemberStatus.REMOVED);
+        targetMember.setLeftAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ConversationSummaryResponse updateConversation(UUID conversationId, UpdateConversationRequest request) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+
+        ConversationMember currentMember = requireAdmin(conversationId, currentUserId);
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(ConversationNotFoundException::new);
+
+        conversation.setName(request.getName() != null ? request.getName().trim() : conversation.getName());
+        if (request.getAvatar() != null) {
+            try {
+                // upload new image first
+                UploadMediaResponse uploadResponse = mediaStorageService
+                        .uploadImage(request.getAvatar().getBytes(), "conversation-avatar" + conversationId)
+                        .join();
+
+                // delete old avatar in storage if exists (best-effort)
+                if (conversation.getPublicId() != null) {
+                    try {
+                        mediaStorageService.delete(conversation.getPublicId());
+                    } catch (Exception ex) {
+                        throw new UploadMediaException();
+                    }
+                }
+
+                conversation.setAvatarUrl(uploadResponse.getUrl());
+                conversation.setPublicId(uploadResponse.getPublicId());
+
+                Conversation saved = conversationRepository.save(conversation);
+                return toSummaryResponse(saved, currentUserId, null);
+            } catch (Exception e) {
+                // If the underlying cause is an IO problem, wrap and rethrow as UploadMediaException
+                if (e instanceof UploadMediaException || (e.getCause() != null && e.getCause() instanceof UploadMediaException)) {
+                    throw new UploadMediaException();
+                }
+                throw new UploadMediaException();
+            }
+        }
+        return toSummaryResponse(conversation, currentUserId, null);
+    }
+
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional
+    public ConversationDetailResponse addMembers(UUID conversationId, AddMembersRequest request) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        requireAdmin(conversationId, currentUserId);
+
+        Set<UUID> requestedIds = new LinkedHashSet<>(request.getMemberIds());
+
+        // Validate user tồn tại trước (UPSERT không tự báo lỗi "user not found")
+        List<User> users = userRepository.findAllById(requestedIds);
+        if (users.size() != requestedIds.size()) {
+            throw new UserNotFoundException();
+        }
+
+        long currentActiveCount = conversationMemberRepository
+                .countByConversationIdAndStatusIn(conversationId,
+                        List.of(MemberStatus.ACCEPTED, MemberStatus.PENDING));
+        int maxMembers = Integer.parseInt(MAX_GROUP_MEMBERS);
+        if (currentActiveCount + requestedIds.size() > maxMembers) {
+            throw new GroupMemberLimitExceededException(MAX_GROUP_MEMBERS);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        int totalAffected = 0;
+        for (UUID userId : requestedIds) {
+            totalAffected += conversationMemberRepository.upsertMember(conversationId, userId, now);
+        }
+
+        if (totalAffected == 0) {
+            // mọi id đều đã ACCEPTED/PENDING từ trước — không có gì để add
+            throw new InvalidChatRequestException();
+        }
+
+        List<ConversationMember> affectedMembers = conversationMemberRepository
+                .findAllByConversationIdAndUserIdIn(conversationId, requestedIds);
+
+        webSocketService.pushAddNewMembers(conversationId,
+                affectedMembers.stream().map(conversationMapper::toMemberResponse).toList());
+
+        return getConversationDetail(conversationId, null, 20);
+    }
+
+
+    @Transactional
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ConversationDetailResponse updateMemberRole(UUID conversationId, UUID memberId, UpdateMemberRoleRequest request) {
+
+        requireAdmin(conversationId, AppUtil.userIdFormAuthentication());
+
+        ConversationMember targetMember = conversationMemberRepository
+                .findConversationMemberByConversationIdAndUserId(conversationId, memberId)
+                .orElseThrow(ConversationMemberNotFoundException::new);
+        targetMember.setRole(request.getRole());
+        conversationMemberRepository.save(targetMember);
+        webSocketService.pushUpdateMemberRole(conversationId, conversationMapper.toMemberResponse(targetMember));
+        return getConversationDetail(conversationId, null, 20);
+    }
+
+
+    /**
+     * Kiểm tra xem userId có phải là admin của conversationId hay không.
+     *
+     * @param conversationId
+     * @param userId
+     * @return ConversationMember nếu là admin
+     * @throws ConversationMemberNotFoundException   nếu không tìm thấy member
+     * @throws ConversationPermissionDeniedException nếu không phải admin
+     * @throws InvalidTypeConversionException        nếu conversation không phải là GROUP
+     */
+    private ConversationMember requireAdmin(UUID conversationId, UUID userId) {
+        ConversationMember member = conversationMemberRepository
+                .findConversationMemberByConversationIdAndUserId(conversationId, userId)
+                .orElseThrow(ConversationMemberNotFoundException::new);
+        if (member.getRole() != MemberRole.ADMIN) {
+            throw new ConversationPermissionDeniedException();
+        }
+        if (member.getConversation().getType() != ConversationType.GROUP) {
+            throw new InvalidTypeConversionException(ConversationType.GROUP);
+        }
+        return member;
     }
 }

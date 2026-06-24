@@ -43,6 +43,9 @@ public class ConversationMember extends BaseEntity {
     @JoinColumn(name = "last_read_message_id")
     private Message lastReadMessage;
 
+
+    private LocalDateTime leftAt;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

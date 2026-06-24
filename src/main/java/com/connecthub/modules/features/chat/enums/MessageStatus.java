@@ -4,5 +4,5 @@ public enum MessageStatus {
     SENT,
     DELIVERED,
     READ, // chỉ áp dụng cho PRIVATE; GROUP không dùng giá trị này
-    DELETED,
+    DELETED;
 }

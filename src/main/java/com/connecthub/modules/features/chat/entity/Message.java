@@ -5,6 +5,7 @@ import com.connecthub.modules.features.user.entity.User;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -48,4 +49,11 @@ public class Message extends BaseEntity {
     // Với PRIVATE, field này không dùng (delivered theo từng người ở
     // MessageReceipt thay vì ở đây).
     private LocalDateTime deliveredAt;
+
+
+    private boolean deleted;
+    private LocalDateTime deletedAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deleted_by")
+    private User deletedBy;
 }

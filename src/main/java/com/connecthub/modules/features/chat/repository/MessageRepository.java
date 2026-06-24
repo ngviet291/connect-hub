@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.chat.repository;
 
 import com.connecthub.modules.features.chat.entity.Message;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,5 +52,20 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Modifying
     @Query("UPDATE Message m SET m.deliveredAt = :now WHERE m.id = :messageId AND m.deliveredAt IS NULL")
     void markDeliveredFlag(@Param("messageId") UUID messageId, @Param("now") LocalDateTime now);
+
+    @Query("""
+    SELECT m FROM Message m
+    JOIN FETCH m.sender
+    LEFT JOIN FETCH m.messageMedia
+    WHERE m.conversation.id = :conversationId
+      AND m.deleted = false
+      AND (:cursor IS NULL OR m.id < :cursor)
+    ORDER BY m.id DESC
+    """)
+    List<Message> findMessagesByConversationId(
+            @Param("conversationId") UUID conversationId,
+            @Param("cursor") UUID cursor,
+            Limit limit
+    );
 
 }

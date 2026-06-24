@@ -35,7 +35,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             JOIN c.conversationMembers cm
             WHERE cm.user.id = :userId
               AND (:status IS NULL OR cm.status = :status)
-              AND (:cursor IS NULL OR c.id < :cursor)
+              AND (:cursor IS NULL OR c.id < :cursor) 
+              AND cm.status not in ('LEFT', 'REMOVED')
             ORDER BY c.id DESC
             """)
     List<Conversation> findConversationsByUserId(

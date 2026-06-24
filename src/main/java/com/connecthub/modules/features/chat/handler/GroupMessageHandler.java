@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.chat.handler;
 
+import com.connecthub.common.websocket.handler.EventHandler;
 import com.connecthub.modules.features.chat.dto.response.MessageResponse;
 import com.connecthub.modules.features.chat.enums.ConversationType;
 import com.connecthub.modules.features.chat.event.GroupMessageEvent;
@@ -21,14 +22,19 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class GroupMessageHandler {
+public class GroupMessageHandler implements EventHandler<GroupMessageEvent> {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final NotificationService notificationService;
     private final ConversationMemberRepository conversationMemberRepository;
     private final UserMapper userMapper; // map User -> NotificationUserSummaryResponse cho actor
     private final DeliveryTrackingService deliveryTrackingService;
 
-    @EventListener
+    @Override
+    public Class<GroupMessageEvent> support() {
+        return GroupMessageEvent.class;
+    }
+
+    @Override
     public void handle(GroupMessageEvent event) {
         MessageResponse message = event.getMessage();
 
