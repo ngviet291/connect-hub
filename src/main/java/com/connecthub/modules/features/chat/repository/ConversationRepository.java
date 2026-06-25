@@ -17,32 +17,41 @@ import java.util.UUID;
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
+
     @Query("""
-                SELECT DISTINCT c FROM Conversation c
-                JOIN c.conversationMembers cm1
-                JOIN c.conversationMembers cm2
-                WHERE c.type = 'PRIVATE'
-                  AND cm1.user.id = :senderId
-                  AND cm2.user.id = :recipientId
+            SELECT c FROM Conversation c
+            WHERE c.type = 'PRIVATE'
+              AND EXISTS (SELECT 1 FROM ConversationMember m1 WHERE m1.conversation = c AND m1.user.id = :userAId)
+              AND EXISTS (SELECT 1 FROM ConversationMember m2 WHERE m2.conversation = c AND m2.user.id = :userBId)
             """)
     Optional<Conversation> findPrivateConversation(
-            @Param("senderId") UUID senderId,
-            @Param("recipientId") UUID recipientId
+            @Param("userAId") UUID userAId,
+            @Param("userBId") UUID userBId
     );
 
     // ConversationRepository
     @Query("""
-    SELECT c FROM Conversation c
-    JOIN c.conversationMembers cm
-    WHERE cm.user.id = :userId
-      AND (:status IS NULL OR cm.status = :status)
-      AND (:cursor IS NULL OR c.id < :cursor)
-    ORDER BY c.id DESC
-    """)
+            SELECT c FROM Conversation c
+            JOIN c.conversationMembers cm
+            WHERE cm.user.id = :userId
+              AND (:status IS NULL OR cm.status = :status)
+              AND (:cursor IS NULL OR c.id < :cursor) 
+              AND cm.status not in ('LEFT', 'REMOVED')
+            ORDER BY c.id DESC
+            """)
     List<Conversation> findConversationsByUserId(
             @Param("userId") UUID userId,
             @Param("cursor") UUID cursor,
             Limit limit,
             @Param("status") MemberStatus status
     );
+
+    @Query("""
+    SELECT c FROM Conversation c
+    LEFT JOIN FETCH c.conversationMembers cm
+    LEFT JOIN FETCH cm.user
+    WHERE c.id = :id
+    """)
+    Optional<Conversation> findByIdWithMembers(@Param("id") UUID id);
+
 }

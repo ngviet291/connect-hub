@@ -5,13 +5,14 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.notification.entity.Notification;
 import com.connecthub.modules.features.notification.enums.NotificationType;
 import com.connecthub.modules.features.notification.repository.NotificationRepository;
-import com.connecthub.modules.features.social.dto.FollowStatsResponse;
+import com.connecthub.modules.features.user.dto.response.FollowStatsResponse;
 import com.connecthub.modules.features.social.entity.Follow;
 import com.connecthub.modules.features.social.repository.FollowRepository;
 import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
+import com.connecthub.modules.features.user.dto.response.BlockStatusResponse;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.enums.UserStatus;
@@ -20,6 +21,8 @@ import com.connecthub.modules.features.user.exception.DuplicatePhoneNumberExcept
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.mapper.UserMapper;
 import com.connecthub.modules.features.user.repository.UserRepository;
+import com.connecthub.modules.features.user.entity.UserBlock;
+import com.connecthub.modules.features.user.repository.UserBlockRepository;
 import com.connecthub.modules.features.user.service.UserService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +51,9 @@ class UserServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private UserBlockRepository userBlockRepository;
 
     @InjectMocks
     private UserService userService;
@@ -518,6 +524,194 @@ class UserServiceTest {
 
             assertSame(expectedStats, result);
             verify(userRepository).existsById(CURRENT_USER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("blockUser")
+    class BlockUserTest {
+        @Test
+        void blockUser_self_throwsConflictException() {
+            assertThrows(ConflictUserException.class, () -> userService.blockUser(CURRENT_USER_ID));
+        }
+
+        @Test
+        void blockUser_targetNotFound_throwsUserNotFoundException() {
+            UUID targetId = UUID.randomUUID();
+            when(userRepository.findById(targetId)).thenReturn(Optional.empty());
+
+            assertThrows(UserNotFoundException.class, () -> userService.blockUser(targetId));
+            verify(userRepository).findById(targetId);
+        }
+
+        @Test
+        void blockUser_success_newBlock() {
+            UUID targetId = UUID.randomUUID();
+            User currentUser = User.builder().id(CURRENT_USER_ID).username("currentUser").build();
+            User targetUser = User.builder().id(targetId).username("targetUser").build();
+            UserResponse expectedResponse = new UserResponse();
+
+            when(userRepository.findById(targetId)).thenReturn(Optional.of(targetUser));
+            when(userRepository.findById(CURRENT_USER_ID)).thenReturn(Optional.of(currentUser));
+            when(userBlockRepository.existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID)).thenReturn(false);
+            when(userMapper.toUserResponse(targetUser)).thenReturn(expectedResponse);
+
+            UserResponse result = userService.blockUser(targetId);
+
+            assertSame(expectedResponse, result);
+            verify(userBlockRepository).existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID);
+
+            ArgumentCaptor<UserBlock> blockCaptor = ArgumentCaptor.forClass(UserBlock.class);
+            verify(userBlockRepository).save(blockCaptor.capture());
+            UserBlock savedBlock = blockCaptor.getValue();
+            assertEquals(GENERATED_UUID, savedBlock.getId());
+            assertEquals(currentUser, savedBlock.getBlocker());
+            assertEquals(targetUser, savedBlock.getBlocked());
+
+            verify(followRepository).deleteByFollowerIdAndFollowingId(CURRENT_USER_ID, targetId);
+            verify(followRepository).deleteByFollowerIdAndFollowingId(targetId, CURRENT_USER_ID);
+        }
+
+        @Test
+        void blockUser_success_alreadyBlocked() {
+            UUID targetId = UUID.randomUUID();
+            User currentUser = User.builder().id(CURRENT_USER_ID).username("currentUser").build();
+            User targetUser = User.builder().id(targetId).username("targetUser").build();
+            UserResponse expectedResponse = new UserResponse();
+
+            when(userRepository.findById(targetId)).thenReturn(Optional.of(targetUser));
+            when(userRepository.findById(CURRENT_USER_ID)).thenReturn(Optional.of(currentUser));
+            when(userBlockRepository.existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID)).thenReturn(true);
+            when(userMapper.toUserResponse(targetUser)).thenReturn(expectedResponse);
+
+            UserResponse result = userService.blockUser(targetId);
+
+            assertSame(expectedResponse, result);
+            verify(userBlockRepository).existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID);
+            verify(userBlockRepository, never()).save(any());
+            verify(followRepository, never()).deleteByFollowerIdAndFollowingId(any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("unblockUser")
+    class UnblockUserTest {
+        @Test
+        void unblockUser_targetNotFound_throwsUserNotFoundException() {
+            UUID targetId = UUID.randomUUID();
+            when(userRepository.findById(targetId)).thenReturn(Optional.empty());
+
+            assertThrows(UserNotFoundException.class, () -> userService.unblockUser(targetId));
+            verify(userRepository).findById(targetId);
+        }
+
+        @Test
+        void unblockUser_success() {
+            UUID targetId = UUID.randomUUID();
+            User targetUser = User.builder().id(targetId).username("targetUser").build();
+            UserResponse expectedResponse = new UserResponse();
+
+            when(userRepository.findById(targetId)).thenReturn(Optional.of(targetUser));
+            when(userMapper.toUserResponse(targetUser)).thenReturn(expectedResponse);
+
+            UserResponse result = userService.unblockUser(targetId);
+
+            assertSame(expectedResponse, result);
+            verify(userBlockRepository).deleteByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("getBlockedUsers")
+    class GetBlockedUsersTest {
+        @Test
+        void getBlockedUsers_success_withNextPage() {
+            UUID cursor = UUID.randomUUID();
+            int size = 2;
+
+            User blocked1 = User.builder().id(UUID.randomUUID()).username("blocked1").build();
+            User blocked2 = User.builder().id(UUID.randomUUID()).username("blocked2").build();
+            User blocked3 = User.builder().id(UUID.randomUUID()).username("blocked3").build();
+
+            UserBlock ub1 = UserBlock.builder().id(UUID.randomUUID()).blocked(blocked1).build();
+            UserBlock ub2 = UserBlock.builder().id(UUID.randomUUID()).blocked(blocked2).build();
+            UserBlock ub3 = UserBlock.builder().id(UUID.randomUUID()).blocked(blocked3).build();
+
+            when(userBlockRepository.findBlockedUsers(CURRENT_USER_ID, cursor, Limit.of(size + 1)))
+                    .thenReturn(List.of(ub1, ub2, ub3));
+
+            UserSummaryResponse summary1 = new UserSummaryResponse();
+            UserSummaryResponse summary2 = new UserSummaryResponse();
+            when(userMapper.toUserSummaryResponse(blocked1)).thenReturn(summary1);
+            when(userMapper.toUserSummaryResponse(blocked2)).thenReturn(summary2);
+
+            CursorResponse<UserSummaryResponse> response = userService.getBlockedUsers(cursor, size);
+
+            assertTrue(response.isHasNext());
+            assertEquals(2, response.getContent().size());
+            assertEquals(ub2.getId().toString(), response.getNextCursor());
+            verify(userBlockRepository).findBlockedUsers(CURRENT_USER_ID, cursor, Limit.of(size + 1));
+        }
+
+        @Test
+        void getBlockedUsers_success_noNextPage() {
+            UUID cursor = UUID.randomUUID();
+            int size = 5;
+
+            User blocked = User.builder().id(UUID.randomUUID()).username("blocked").build();
+            UserBlock ub = UserBlock.builder().id(UUID.randomUUID()).blocked(blocked).build();
+
+            when(userBlockRepository.findBlockedUsers(CURRENT_USER_ID, cursor, Limit.of(size + 1)))
+                    .thenReturn(List.of(ub));
+
+            UserSummaryResponse summary = new UserSummaryResponse();
+            when(userMapper.toUserSummaryResponse(blocked)).thenReturn(summary);
+
+            CursorResponse<UserSummaryResponse> response = userService.getBlockedUsers(cursor, size);
+
+            assertFalse(response.isHasNext());
+            assertEquals(1, response.getContent().size());
+            assertEquals(ub.getId().toString(), response.getNextCursor());
+            verify(userBlockRepository).findBlockedUsers(CURRENT_USER_ID, cursor, Limit.of(size + 1));
+        }
+    }
+
+    @Nested
+    @DisplayName("isBlockingUser")
+    class IsBlockingUserTest {
+        @Test
+        void isBlockingUser_targetNotFound_throwsUserNotFoundException() {
+            UUID targetId = UUID.randomUUID();
+            when(userRepository.existsById(targetId)).thenReturn(false);
+
+            assertThrows(UserNotFoundException.class, () -> userService.isBlockingUser(targetId));
+            verify(userRepository).existsById(targetId);
+        }
+
+        @Test
+        void isBlockingUser_true() {
+            UUID targetId = UUID.randomUUID();
+            when(userRepository.existsById(targetId)).thenReturn(true);
+            when(userBlockRepository.existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID)).thenReturn(true);
+
+            BlockStatusResponse result = userService.isBlockingUser(targetId);
+
+            assertTrue(result.isBlocked());
+            verify(userRepository).existsById(targetId);
+            verify(userBlockRepository).existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID);
+        }
+
+        @Test
+        void isBlockingUser_false() {
+            UUID targetId = UUID.randomUUID();
+            when(userRepository.existsById(targetId)).thenReturn(true);
+            when(userBlockRepository.existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID)).thenReturn(false);
+
+            BlockStatusResponse result = userService.isBlockingUser(targetId);
+
+            assertFalse(result.isBlocked());
+            verify(userRepository).existsById(targetId);
+            verify(userBlockRepository).existsByBlockedIdAndBlockerId(targetId, CURRENT_USER_ID);
         }
     }
 }

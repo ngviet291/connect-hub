@@ -30,6 +30,8 @@ public class Conversation extends BaseEntity {
     // avatar của bất kỳ thành viên nào.
     private String avatarUrl;
 
+    private String publicId; // dung de xoa hinh anh cua cloudinary
+
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ConversationMember> conversationMembers;
 

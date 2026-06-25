@@ -7,6 +7,7 @@ import com.connecthub.modules.features.user.dto.request.UserStatusRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.FollowResponse;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
+import com.connecthub.modules.features.user.dto.response.BlockStatusResponse;
 
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.enums.UserResponseCode;
@@ -178,4 +179,44 @@ public class UserController {
                 .build();
     }
 
+    //User block
+    // api này dùng để chặn người dùng
+    @PostMapping("/{id}/block")
+    public ApiResponse<UserResponse> blockUser(@PathVariable UUID id) {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.BLOCK_USER_SUCCESS.getCode())
+                .message(UserResponseCode.BLOCK_USER_SUCCESS.getMessage())
+                .data(userService.blockUser(id))
+                .build();
+    }
+    //  api này dùng để bỏ chặn người dùng
+    @DeleteMapping("/{id}/block")
+    public ApiResponse<UserResponse> unblockUser(@PathVariable UUID id) {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.UNBLOCK_USER_SUCCESS.getCode())
+                .message(UserResponseCode.UNBLOCK_USER_SUCCESS.getMessage())
+                .data(userService.unblockUser(id))
+                .build();
+    }
+    @GetMapping("/blocked")
+    // lấy danh sách người dùng bị chặn bởi người dùng hiện tại
+    public ApiResponse<CursorResponse<UserSummaryResponse>> getBlockedUsers(
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+    ) {
+        return ApiResponse.<CursorResponse<UserSummaryResponse>>builder()
+                .code(UserResponseCode.GET_BLOCKED_USERS_SUCCESS.getCode())
+                .message(UserResponseCode.GET_BLOCKED_USERS_SUCCESS.getMessage())
+                .data(userService.getBlockedUsers(cursor, size))
+                .build();
+    }
+    // kiểm tra trạng thái block user xem user block targetUser hay ko
+    @GetMapping("/{id}/block/status")
+    public ApiResponse<BlockStatusResponse> getBlockStatus(@PathVariable UUID id) {
+        return ApiResponse.<BlockStatusResponse>builder()
+                .code(UserResponseCode.GET_BLOCK_STATUS_SUCCESS.getCode())
+                .message(UserResponseCode.GET_BLOCK_STATUS_SUCCESS.getMessage())
+                .data(userService.isBlockingUser(id))
+                .build();
+    }
 }

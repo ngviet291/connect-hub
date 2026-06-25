@@ -16,7 +16,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "message_receipts")
+@Table(
+        name = "message_receipts",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"message_id", "user_id"})
+)
 public class MessageReceipt extends BaseEntity {
     @Id
     private UUID id;

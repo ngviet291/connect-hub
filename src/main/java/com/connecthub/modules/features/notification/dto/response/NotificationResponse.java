@@ -1,7 +1,6 @@
 package com.connecthub.modules.features.notification.dto.response;
 
 import com.connecthub.modules.features.notification.enums.NotificationType;
-import com.connecthub.modules.features.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +19,7 @@ public class NotificationResponse {
     private String targetUrl;
     private NotificationType type;
     private PostSummaryResponse post;
-    private UserSummaryResponse user;
+    private NotificationUserSummaryResponse user;
     private boolean read;
     private LocalDateTime createdAt;
 }
