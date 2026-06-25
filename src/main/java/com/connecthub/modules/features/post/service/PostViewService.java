@@ -47,4 +47,11 @@ public class PostViewService {
         postRepository.incrementViewCount(postId);
         log.info("User {} viewed post {}", userId, postId);
     }
+    @Transactional(readOnly = true)
+    public long getViewCount(UUID postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(PostNotFoundException::new);
+
+        return post.getViewCount();
+    }
 }

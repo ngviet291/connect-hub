@@ -17,7 +17,8 @@ public enum PostResponseCode {
     BOOKMARK_SUCCESS("Bookmark updated successfully", 2010),
     GET_BOOKMARKS_SUCCESS("Bookmarks retrieved successfully", 2011),
     REPOST_SUCCESS("Repost updated successfully", 2012),
-    VIEW_RECORDED_SUCCESS("View recorded successfully", 2013);
+    VIEW_RECORDED_SUCCESS("View recorded successfully", 2013),
+    VIEW_SUCCESS("View count retrieved successfully", 2014);
     private final String message;
     private final int code;
 

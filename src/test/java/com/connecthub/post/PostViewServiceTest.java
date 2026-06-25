@@ -150,4 +150,82 @@ class PostViewServiceTest {
             verify(userRepository, never()).findById(any());
         }
     }
+    @Nested
+    @DisplayName("Test getViewCount()")
+    class GetViewCountTest {
+
+        @Test
+        @DisplayName("Thành công - Lấy số lượt xem")
+        void getViewCount_Success() {
+            UUID postId = UUID.randomUUID();
+
+            Post post = Post.builder()
+                    .id(postId)
+                    .viewCount(3)
+                    .build();
+
+            when(postRepository.findById(postId))
+                    .thenReturn(java.util.Optional.of(post));
+
+            long result = postViewService.getViewCount(postId);
+
+            assertEquals(3, result);
+            verify(postRepository).findById(postId);
+        }
+
+        @Test
+        @DisplayName("Thất bại - Không tìm thấy bài viết")
+        void getViewCount_PostNotFound() {
+            UUID postId = UUID.randomUUID();
+
+            when(postRepository.findById(postId))
+                    .thenReturn(java.util.Optional.empty());
+
+            assertThrows(
+                    PostNotFoundException.class,
+                    () -> postViewService.getViewCount(postId)
+            );
+
+            verify(postRepository).findById(postId);
+        }
+
+        @Test
+        @DisplayName("Thành công - Bài viết chưa có lượt xem")
+        void getViewCount_ZeroView() {
+            UUID postId = UUID.randomUUID();
+
+            Post post = Post.builder()
+                    .id(postId)
+                    .viewCount(0)
+                    .build();
+
+            when(postRepository.findById(postId))
+                    .thenReturn(java.util.Optional.of(post));
+
+            long result = postViewService.getViewCount(postId);
+
+            assertEquals(0, result);
+            verify(postRepository).findById(postId);
+        }
+
+        @Test
+        @DisplayName("Thành công - Không gọi repository khác")
+        void getViewCount_OnlyCallPostRepository() {
+            UUID postId = UUID.randomUUID();
+
+            Post post = Post.builder()
+                    .id(postId)
+                    .viewCount(10)
+                    .build();
+
+            when(postRepository.findById(postId))
+                    .thenReturn(java.util.Optional.of(post));
+
+            postViewService.getViewCount(postId);
+
+            verify(postRepository).findById(postId);
+            verifyNoInteractions(postViewRepository);
+            verifyNoInteractions(userRepository);
+        }
+    }
 }

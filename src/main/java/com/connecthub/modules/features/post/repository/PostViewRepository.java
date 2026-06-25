@@ -2,10 +2,18 @@ package com.connecthub.modules.features.post.repository;
 
 import com.connecthub.modules.features.post.entity.PostView;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
 public interface PostViewRepository extends JpaRepository<PostView, UUID> {
+    @Query("""
+    SELECT p.viewCount
+    FROM Post p
+    WHERE p.id = :postId
+    """)
+    Long getViewCount(@Param("postId") UUID postId);
 }

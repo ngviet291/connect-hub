@@ -4,6 +4,9 @@ import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
+import com.connecthub.modules.features.post.dto.response.PostViewResponse;
+import com.connecthub.modules.features.post.dto.response.ReactionCountResponse;
+import com.connecthub.modules.features.post.dto.response.ReactionResponse;
 import com.connecthub.modules.features.post.enums.PostResponseCode;
 import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.post.service.BookmarkService;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -179,6 +183,44 @@ public class PostController {
         return ApiResponse.<Void>builder()
                 .code(PostResponseCode.VIEW_RECORDED_SUCCESS.getCode())
                 .message(PostResponseCode.VIEW_RECORDED_SUCCESS.getMessage())
+                .build();
+    }
+
+    // GET /v1/posts/{id}/reactions?cursor=xxx&limit=20
+    // Lấy danh sách người đã react bài đăng (cursor-based pagination)
+    @GetMapping("/{id}/reactions")
+    public ApiResponse<CursorResponse<ReactionResponse>> getReactions(
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.<CursorResponse<ReactionResponse>>builder()
+                .code(PostResponseCode.REACTION_SUCCESS.getCode())
+                .message("Reactions retrieved successfully")
+                .data(reactionService.getReactionsByPost(id, cursor, limit))
+                .build();
+    }
+
+    // GET /v1/posts/{id}/reactions/count
+    // Đếm số lượng react theo từng loại (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
+    @GetMapping("/{id}/reactions/count")
+    public ApiResponse<List<ReactionCountResponse>> countReactions(@PathVariable UUID id) {
+        return ApiResponse.<List<ReactionCountResponse>>builder()
+                .code(PostResponseCode.REACTION_SUCCESS.getCode())
+                .message("Reaction counts retrieved successfully")
+                .data(reactionService.countReactionsByType(id))
+                .build();
+    }
+    // GET /v1/posts/{id}/viewsCount
+    // Lấy số lượng view của bài viết
+    @GetMapping("/{id}/viewsCount")
+    public ApiResponse<PostViewResponse> getViewCount(@PathVariable UUID id) {
+        return ApiResponse.<PostViewResponse>builder()
+                .message("View count retrieved successfully")
+                .data(
+                        PostViewResponse.builder()
+                                .viewCount(postViewService.getViewCount(id))
+                                .build()
+                )
                 .build();
     }
 }
