@@ -4,14 +4,12 @@ import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
-import com.connecthub.modules.features.post.dto.response.PostViewResponse;
 import com.connecthub.modules.features.post.dto.response.ReactionCountResponse;
 import com.connecthub.modules.features.post.dto.response.ReactionResponse;
 import com.connecthub.modules.features.post.enums.PostResponseCode;
 import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.post.service.BookmarkService;
 import com.connecthub.modules.features.post.service.PostService;
-import com.connecthub.modules.features.post.service.PostViewService;
 import com.connecthub.modules.features.post.service.ReactionService;
 import com.connecthub.modules.features.post.service.RepostService;
 import jakarta.validation.Valid;
@@ -31,7 +29,6 @@ public class PostController {
     private final ReactionService reactionService;
     private final BookmarkService bookmarkService;
     private final RepostService repostService;
-    private final PostViewService postViewService;
 
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -175,17 +172,6 @@ public class PostController {
                 .data(reposted)
                 .build();
     }
-
-    //record view khi user xem bài viết (có thể gọi từ frontend khi mở bài viết)
-    @PostMapping("/{id}/views")
-    public ApiResponse<Void> recordView(@PathVariable UUID id) {
-        postViewService.recordView(id);
-        return ApiResponse.<Void>builder()
-                .code(PostResponseCode.VIEW_RECORDED_SUCCESS.getCode())
-                .message(PostResponseCode.VIEW_RECORDED_SUCCESS.getMessage())
-                .build();
-    }
-
     // GET /v1/posts/{id}/reactions?cursor=xxx&limit=20
     // Lấy danh sách người đã react bài đăng (cursor-based pagination)
     @GetMapping("/{id}/reactions")
@@ -208,19 +194,6 @@ public class PostController {
                 .code(PostResponseCode.REACTION_SUCCESS.getCode())
                 .message("Reaction counts retrieved successfully")
                 .data(reactionService.countReactionsByType(id))
-                .build();
-    }
-    // GET /v1/posts/{id}/viewsCount
-    // Lấy số lượng view của bài viết
-    @GetMapping("/{id}/viewsCount")
-    public ApiResponse<PostViewResponse> getViewCount(@PathVariable UUID id) {
-        return ApiResponse.<PostViewResponse>builder()
-                .message("View count retrieved successfully")
-                .data(
-                        PostViewResponse.builder()
-                                .viewCount(postViewService.getViewCount(id))
-                                .build()
-                )
                 .build();
     }
 }
