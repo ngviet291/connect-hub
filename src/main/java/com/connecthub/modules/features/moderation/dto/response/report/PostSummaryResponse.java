@@ -1,4 +1,4 @@
-package com.connecthub.modules.features.moderation.dto.response;
+package com.connecthub.modules.features.moderation.dto.response.report;
 
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import lombok.AllArgsConstructor;

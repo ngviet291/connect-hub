@@ -1,11 +1,10 @@
 package com.connecthub.modules.features.moderation.mapper;
 
-import com.connecthub.modules.features.moderation.dto.request.CreateReportRequest;
-import com.connecthub.modules.features.moderation.dto.request.UpdateStatusRequest;
-import com.connecthub.modules.features.moderation.dto.response.*;
+import com.connecthub.modules.features.moderation.dto.request.report.CreateReportRequest;
+import com.connecthub.modules.features.moderation.dto.request.report.UpdateReportStatusRequest;
+import com.connecthub.modules.features.moderation.dto.response.report.*;
 import com.connecthub.modules.features.moderation.entity.Report;
 import com.connecthub.modules.features.post.entity.Post;
-import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.mapper.UserMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -26,10 +25,10 @@ public interface ReportMapper {
     @Mapping(target = "author", source = "user")
     PostSummaryResponse toPostSummaryResponse(Post post);
 
-    @Mapping(target = "status", source = "updateStatusRequest.status")
+    @Mapping(target = "status", source = "updateReportStatusRequest.status")
     @Mapping(target = "resolvedAt", expression = "java(java.time.LocalDateTime.now())")
-    @Mapping(target = "resolutionNote", source = "updateStatusRequest.resolutionNote")
-    void updateReport(UpdateStatusRequest updateStatusRequest, @MappingTarget Report report);
+    @Mapping(target = "resolutionNote", source = "updateReportStatusRequest.resolutionNote")
+    void updateReport(UpdateReportStatusRequest updateReportStatusRequest, @MappingTarget Report report);
 
     @Mapping(target = "reportId", source = "id")
     UpdateStatusResponse toUpdateReportResponse(Report save);

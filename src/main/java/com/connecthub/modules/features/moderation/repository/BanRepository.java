@@ -22,12 +22,33 @@ public interface BanRepository extends JpaRepository<Ban, UUID> {
     Optional<Ban> findActiveBanByUserId(
             @Param("userId") UUID userId, @Param("now") LocalDateTime now);
 
-    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM Ban b " +
-            "WHERE b.user.id = :userId AND (b.endDate IS NULL OR b.endDate > :now)")
+    @Query("""
+                    SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM Ban b
+                    WHERE b.user.id = :userId AND ((b.endDate IS NULL OR b.endDate > :now) AND b.unbannedAt IS NULL)
+            """)
     boolean existsActiveBanByUserId(
             @Param("userId") UUID userId, @Param("now") LocalDateTime now);
 
-    @Query("SELECT b FROM Ban b WHERE (b.endDate IS NULL OR b.endDate > :now)")
-    List<Ban> findAllActive(@Param("now") LocalDateTime now);
+    @Query("""
+            SELECT b
+            FROM Ban b left JOIN b.unbannedBy u
+            WHERE (b.endDate IS NULL OR b.endDate > :now)
+            AND b.unbannedAt IS NULL
+            """)
+    Page<Ban> findAllActive(@Param("now") LocalDateTime now, Pageable pageable);
 
+    @Query("""
+                    SELECT b
+                    FROM Ban b
+                   LEFT JOIN b.unbannedBy u
+            """)
+    Page<Ban> findBansAll(Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Ban b
+            WHERE b.user.id = :userId
+            AND b.unbannedAt IS NULL
+            AND (b.endDate IS NULL OR b.endDate > :now)
+            """)
+    Optional<Ban> findActiveBanForUser(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 }

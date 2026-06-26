@@ -1,6 +1,7 @@
-package com.connecthub.modules.features.moderation.exception;
+package com.connecthub.modules.features.moderation.exception.report;
 
 import com.connecthub.common.exception.ParameterizedException;
+import com.connecthub.modules.features.moderation.exception.ModerationErrorCode;
 
 import java.util.Map;
 

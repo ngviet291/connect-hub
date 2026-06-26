@@ -1,6 +1,6 @@
 package com.connecthub.modules.features.moderation.enums;
 
-import com.connecthub.modules.features.moderation.exception.InvalidReportStatus;
+import com.connecthub.modules.features.moderation.exception.report.InvalidReportStatus;
 
 public enum ReportStatus {
     PENDING, // đang chờ xử lý

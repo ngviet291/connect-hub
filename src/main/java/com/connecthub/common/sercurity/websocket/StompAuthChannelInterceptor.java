@@ -1,5 +1,6 @@
 package com.connecthub.common.sercurity.websocket;
 
+import com.connecthub.modules.features.user.dto.request.IntrospectRequest;
 import com.connecthub.modules.features.user.dto.response.IntrospectResponse;
 import com.connecthub.modules.features.user.service.AuthenticationService;
 import com.connecthub.modules.features.user.service.JwtService;
@@ -26,6 +27,8 @@ import java.util.List;
 @Slf4j // Khởi tạo logger tự động từ Lombok
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
     private final JwtService jwtService;
+    private final AuthenticationService authenticationService;
+
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
@@ -45,7 +48,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 String token = authorizationHeader.substring(7);
 
                 try {
-                    IntrospectResponse introspectResponse = jwtService.introspect(token);
+                    IntrospectResponse introspectResponse = authenticationService.introspect(IntrospectRequest.builder().accessToken(token).build());
                     // Xác thực token và lấy dữ liệu một cách an toàn
                     if (introspectResponse != null && introspectResponse.isActive()) {
                         SignedJWT signedJWT = jwtService.verifyToken(token);

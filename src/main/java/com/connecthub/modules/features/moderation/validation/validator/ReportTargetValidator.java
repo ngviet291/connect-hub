@@ -1,6 +1,6 @@
 package com.connecthub.modules.features.moderation.validation.validator;
 
-import com.connecthub.modules.features.moderation.dto.request.CreateReportRequest;
+import com.connecthub.modules.features.moderation.dto.request.report.CreateReportRequest;
 import com.connecthub.modules.features.moderation.validation.annotation.ValidReportTarget;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

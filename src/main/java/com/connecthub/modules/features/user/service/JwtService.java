@@ -98,7 +98,7 @@ public class JwtService {
                     .active(true)
                     .scope(claimsSet.getStringClaim(SCOPE_CLAIM))
                     .clientId(claimsSet.getIssuer())
-                    .username(claimsSet.getSubject())
+                    .userId(claimsSet.getSubject())
                     .exp(claimsSet.getExpirationTime().getTime() / 1000)
                     .iat(claimsSet.getIssueTime().getTime() / 1000)
                     .sub(claimsSet.getSubject())
@@ -149,6 +149,7 @@ public class JwtService {
             throw new AppException(ErrorCode.INTROSPECT_FAILED);
         }
     }
+
     public boolean isTokenValid(String token) {
         try {
             verifyToken(token);

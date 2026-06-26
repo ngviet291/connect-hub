@@ -3,16 +3,15 @@ package com.connecthub.modules.features.moderation.controller;
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.dto.response.PagingResponse;
-import com.connecthub.modules.features.moderation.dto.request.CreateReportRequest;
-import com.connecthub.modules.features.moderation.dto.request.UpdateStatusRequest;
-import com.connecthub.modules.features.moderation.dto.response.MyReportResponse;
-import com.connecthub.modules.features.moderation.dto.response.ReportDetailResponse;
-import com.connecthub.modules.features.moderation.dto.response.ReportResponse;
-import com.connecthub.modules.features.moderation.dto.response.UpdateStatusResponse;
+import com.connecthub.modules.features.moderation.dto.request.report.CreateReportRequest;
+import com.connecthub.modules.features.moderation.dto.request.report.UpdateReportStatusRequest;
+import com.connecthub.modules.features.moderation.dto.response.report.MyReportResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.ReportDetailResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.ReportResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.UpdateStatusResponse;
 import com.connecthub.modules.features.moderation.enums.ReportResponseCode;
 import com.connecthub.modules.features.moderation.enums.ReportStatus;
 import com.connecthub.modules.features.moderation.service.ReportService;
-import com.connecthub.modules.features.user.dto.response.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -61,11 +60,11 @@ public class ReportController {
     }
 
     @PatchMapping("/{reportId}/status")
-    public ApiResponse<UpdateStatusResponse> updateReportStatus(@PathVariable UUID reportId, @RequestBody UpdateStatusRequest updateStatusRequest) {
+    public ApiResponse<UpdateStatusResponse> updateReportStatus(@PathVariable UUID reportId, @RequestBody UpdateReportStatusRequest updateReportStatusRequest) {
         return ApiResponse.<UpdateStatusResponse>builder()
                 .code(ReportResponseCode.UPDATE_STATUS.getCode())
                 .message(ReportResponseCode.UPDATE_STATUS.getMessage())
-                .data(reportService.updateReportStatus(reportId, updateStatusRequest))
+                .data(reportService.updateReportStatus(reportId, updateReportStatusRequest))
                 .build();
     }
 

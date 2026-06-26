@@ -5,8 +5,6 @@ import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.dto.response.PagingResponse;
 import com.connecthub.common.exception.AppException;
 import com.connecthub.common.exception.ErrorCode;
-import com.connecthub.modules.features.moderation.dto.response.ReportResponse;
-import com.connecthub.modules.features.moderation.entity.Report;
 import com.connecthub.modules.features.user.exception.UnauthenticatedException;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.servlet.http.HttpServletRequest;

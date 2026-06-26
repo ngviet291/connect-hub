@@ -18,7 +18,6 @@ import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.post.exception.PostNotFoundException;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.user.entity.User;
-import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -109,12 +108,13 @@ public class NotificationService {
     public NotificationResponse createNotification(NotificationRequest request) {
         User recipient = userRepository.getReferenceById(request.getRecipient());
 
-        User actor = userRepository.getReferenceById(request.getActor());
+        User actor = request.getActor() == null ? null : userRepository.getReferenceById(request.getActor());
         Notification.NotificationBuilder builder = Notification.builder()
                 .recipient(recipient)
                 .id(AppUtil.generateUUID())
                 .actor(actor)
                 .type(request.getType())
+                .content(request.getContent())
                 .targetUrl(request.getTargetUrl());
 
         switch (request.getType()) {

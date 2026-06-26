@@ -3,17 +3,17 @@ package com.connecthub.modules.features.moderation.service;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.dto.response.PagingResponse;
 import com.connecthub.common.util.AppUtil;
-import com.connecthub.modules.features.moderation.dto.request.CreateReportRequest;
-import com.connecthub.modules.features.moderation.dto.request.UpdateStatusRequest;
-import com.connecthub.modules.features.moderation.dto.response.MyReportResponse;
-import com.connecthub.modules.features.moderation.dto.response.ReportDetailResponse;
-import com.connecthub.modules.features.moderation.dto.response.ReportResponse;
-import com.connecthub.modules.features.moderation.dto.response.UpdateStatusResponse;
+import com.connecthub.modules.features.moderation.dto.request.report.CreateReportRequest;
+import com.connecthub.modules.features.moderation.dto.request.report.UpdateReportStatusRequest;
+import com.connecthub.modules.features.moderation.dto.response.report.MyReportResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.ReportDetailResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.ReportResponse;
+import com.connecthub.modules.features.moderation.dto.response.report.UpdateStatusResponse;
 import com.connecthub.modules.features.moderation.entity.Report;
 import com.connecthub.modules.features.moderation.enums.ReportStatus;
-import com.connecthub.modules.features.moderation.exception.DuplicatePendingReportException;
-import com.connecthub.modules.features.moderation.exception.InvalidReportStatusTransitionException;
-import com.connecthub.modules.features.moderation.exception.ReportNotFoundException;
+import com.connecthub.modules.features.moderation.exception.report.DuplicatePendingReportException;
+import com.connecthub.modules.features.moderation.exception.report.InvalidReportStatusTransitionException;
+import com.connecthub.modules.features.moderation.exception.report.ReportNotFoundException;
 import com.connecthub.modules.features.moderation.mapper.ReportMapper;
 import com.connecthub.modules.features.moderation.repository.ReportRepository;
 import com.connecthub.modules.features.post.entity.Post;
@@ -96,13 +96,13 @@ public class ReportService {
 
     @Transactional
     @PreAuthorize("hasRole('MODERATOR')")
-    public UpdateStatusResponse updateReportStatus(UUID reportId, UpdateStatusRequest updateStatusRequest) {
+    public UpdateStatusResponse updateReportStatus(UUID reportId, UpdateReportStatusRequest updateReportStatusRequest) {
 
         User userResolve = userRepository.getReferenceById(AppUtil.userIdFormAuthentication());
 
         Report report = reportRepository.findById(reportId).orElseThrow(ReportNotFoundException::new);
-        validateStatus(report.getStatus(), updateStatusRequest.getStatus());
-        reportMapper.updateReport(updateStatusRequest, report);
+        validateStatus(report.getStatus(), updateReportStatusRequest.getStatus());
+        reportMapper.updateReport(updateReportStatusRequest, report);
         report.setResolvedBy(userResolve);
         return reportMapper.toUpdateReportResponse(reportRepository.save(report));
     }
