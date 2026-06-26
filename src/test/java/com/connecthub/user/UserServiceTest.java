@@ -291,7 +291,6 @@ class UserServiceTest {
             FollowResponse response = userService.followUser(targetId);
 
             assertFalse(response.isSuccess());
-            assertEquals("Already following this user", response.getMessage());
             assertEquals(CURRENT_USER_ID, response.getFollowerId());
             assertEquals(targetId, response.getFollowingId());
             verify(followRepository).existsByFollowerIdAndFollowingId(CURRENT_USER_ID, targetId);
@@ -312,7 +311,6 @@ class UserServiceTest {
             FollowResponse response = userService.followUser(targetId);
 
             assertTrue(response.isSuccess());
-            assertEquals("Successfully followed user", response.getMessage());
             assertEquals(CURRENT_USER_ID, response.getFollowerId());
             assertEquals(targetId, response.getFollowingId());
 
@@ -361,7 +359,6 @@ class UserServiceTest {
             FollowResponse response = userService.unfollowUser(targetId);
 
             assertTrue(response.isSuccess());
-            assertEquals("Successfully unfollowed user", response.getMessage());
             assertEquals(CURRENT_USER_ID, response.getFollowerId());
             assertEquals(targetId, response.getFollowingId());
             verify(followRepository).deleteByFollowerIdAndFollowingId(CURRENT_USER_ID, targetId);

@@ -1,7 +1,9 @@
 package com.connecthub.common.exception;
 
+import com.connecthub.common.dto.response.AccountLockedErrorResponse;
 import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.user.exception.AccountLockedException;
 import com.connecthub.modules.features.user.exception.DuplicateEmailException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -47,14 +50,23 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request
     ) {
-
         Map<String, String> errors = new HashMap<>();
 
+        // Field-level errors
         ex.getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
                         errors.put(
                                 error.getField(),
+                                error.getDefaultMessage()
+                        ));
+
+        // Class-level (object) errors - đây là phần bạn đang thiếu
+        ex.getBindingResult()
+                .getGlobalErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getObjectName(), // hoặc dùng key cố định như "request"
                                 error.getDefaultMessage()
                         ));
 
@@ -183,5 +195,27 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(errorCode.getStatusCode()).body(errorResponse);
 
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<AccountLockedErrorResponse> handleAccountLocked(
+            AccountLockedException ex, HttpServletRequest request) {
+
+        LocalDateTime now = LocalDateTime.now();
+        long remainingSeconds = Math.max(
+                Duration.between(now, ex.getLockedUntil()).getSeconds(), 0
+        );
+
+        AccountLockedErrorResponse error = AccountLockedErrorResponse.builder()
+                .timestamp(now)
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("ACCOUNT_LOCKED")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .lockedUntil(ex.getLockedUntil())
+                .remainingSeconds(remainingSeconds)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

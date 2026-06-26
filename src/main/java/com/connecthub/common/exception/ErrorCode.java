@@ -13,7 +13,7 @@ public enum ErrorCode implements BaseErrorCode {
     UNAUTHORIZED("Unauthorized", HttpStatus.UNAUTHORIZED),
     FORBIDDEN("Forbidden", HttpStatus.FORBIDDEN),
     UNAUTHENTICATED("Unauthenticated", HttpStatus.UNAUTHORIZED),
-    ACCOUNT_LOCKED("Account Locked", HttpStatus.LOCKED),
+    ACCOUNT_LOCKED("The account has been temporarily locked due to too many login attempts.", HttpStatus.LOCKED),
     USER_NOT_FOUND("User Not Found", HttpStatus.NOT_FOUND),
     INVALID_PARAMETER_TYPE("Invalid parameter type", HttpStatus.BAD_REQUEST),
     INVALID_DATE_FORMAT("Invalid date format", HttpStatus.BAD_REQUEST),
@@ -39,8 +39,7 @@ public enum ErrorCode implements BaseErrorCode {
     FILE_NOT_FOUND("File not found", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED("File size exceeded the limit", HttpStatus.BAD_REQUEST),
     INVALID_FILE_TYPE("Invalid file type", HttpStatus.BAD_REQUEST),
-    USER_NOT_BLOCKED("User is not blocked", HttpStatus.BAD_REQUEST)
-    ;
+    USER_NOT_BLOCKED("User is not blocked", HttpStatus.BAD_REQUEST);
 
 
     private final String message;

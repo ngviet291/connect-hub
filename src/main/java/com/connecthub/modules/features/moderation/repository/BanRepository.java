@@ -10,8 +10,45 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface BanRepository extends JpaRepository<Ban, UUID> {
+    Page<Ban> findByUserId(UUID userId, Pageable pageable);
+
+    @Query("SELECT b FROM Ban b WHERE b.user.id = :userId " +
+            "AND (b.endDate IS NULL OR b.endDate > :now)")
+    Optional<Ban> findActiveBanByUserId(
+            @Param("userId") UUID userId, @Param("now") LocalDateTime now);
+
+    @Query("""
+                    SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END FROM Ban b
+                    WHERE b.user.id = :userId AND ((b.endDate IS NULL OR b.endDate > :now) AND b.unbannedAt IS NULL)
+            """)
+    boolean existsActiveBanByUserId(
+            @Param("userId") UUID userId, @Param("now") LocalDateTime now);
+
+    @Query("""
+            SELECT b
+            FROM Ban b left JOIN b.unbannedBy u
+            WHERE (b.endDate IS NULL OR b.endDate > :now)
+            AND b.unbannedAt IS NULL
+            """)
+    Page<Ban> findAllActive(@Param("now") LocalDateTime now, Pageable pageable);
+
+    @Query("""
+                    SELECT b
+                    FROM Ban b
+                   LEFT JOIN b.unbannedBy u
+            """)
+    Page<Ban> findBansAll(Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Ban b
+            WHERE b.user.id = :userId
+            AND b.unbannedAt IS NULL
+            AND (b.endDate IS NULL OR b.endDate > :now)
+            """)
+    Optional<Ban> findActiveBanForUser(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 }

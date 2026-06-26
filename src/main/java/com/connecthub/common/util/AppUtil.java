@@ -2,11 +2,13 @@ package com.connecthub.common.util;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.dto.response.ErrorResponse;
+import com.connecthub.common.dto.response.PagingResponse;
 import com.connecthub.common.exception.AppException;
 import com.connecthub.common.exception.ErrorCode;
 import com.connecthub.modules.features.user.exception.UnauthenticatedException;
 import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -33,8 +35,6 @@ public class AppUtil {
     public static Pageable buildPageable(int page, int size, String sort) {
         int validatedSize = Math.min(size, 50);
         Sort sortBy = switch (sort) {
-            case "price_asc" -> Sort.by("price").ascending();
-            case "price_desc" -> Sort.by("price").descending();
             case "oldest" -> Sort.by("createdAt").ascending();
             default -> Sort.by("createdAt").descending();
         };
@@ -45,6 +45,7 @@ public class AppUtil {
 
     /**
      * Lấy username của người dùng đã xác thực từ SecurityContextHolder.
+     *
      * @return Username của người dùng đã xác thực.
      * @throws AppException nếu không có người dùng nào đã xác thực hoặc người dùng không có quyền truy cập.
      */
@@ -80,6 +81,7 @@ public class AppUtil {
             throw new UnauthenticatedException();
         }
     }
+
     public static <T, R> CursorResponse<R> buildCursorResponse(
             List<T> items,
             int size,
@@ -100,6 +102,22 @@ public class AppUtil {
                 .content(items.stream().map(mapper).toList())
                 .nextCursor(nextCursor == null ? null : nextCursor.toString())
                 .hasNext(hasNext)
+                .build();
+    }
+
+    public static <T, R> PagingResponse<R> buildPagingResponse(
+            Page<T> page,
+            Function<T, R> mapper) {
+
+        return PagingResponse.<R>builder()
+                .content(page.stream()
+                        .map(mapper)
+                        .toList())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .last(page.isLast())
                 .build();
     }
 }

@@ -2,6 +2,8 @@
 package com.connecthub.modules.features.user.service;
 
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.moderation.enums.BanReason;
+import com.connecthub.modules.features.moderation.service.BanService;
 import com.connecthub.modules.features.user.dto.request.*;
 import com.connecthub.modules.features.user.dto.response.AuthenticateResponse;
 import com.connecthub.modules.features.user.dto.response.IntrospectResponse;
@@ -30,8 +32,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -46,8 +50,8 @@ public class AuthenticationService {
     private final ChangePasswordService changePasswordService;
     private final TokenBlackListService tokenBlackListService;
     private final UserClockerService userClockerService;
-    private final UserService userService;
     private final RoleRepository roleRepository;
+    private final BanService banService;
 
     @Transactional
     public UserResponse register(UserCreateRequest request) {
@@ -82,20 +86,29 @@ public class AuthenticationService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(UserNotFoundException::new);
 
-        if (user.isLocked()) {
-            throw new AccountLockedException();
-        }
+        // Check ban đang active (thay cho user.isLocked())
+        banService.findActiveBanForUser(user.getId())
+                .ifPresent(ban -> {
+                    throw new AccountLockedException(ban.getEndDate());
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 
             int failedAttempts = userClockerService.incrementFailedAttempts(request.getUsername());
 
             if (failedAttempts >= 5) {
-                log.warn("User {} has been locked due to too many failed login attempts", request.getUsername());
+                log.warn("User {} bị khóa tạm thời do đăng nhập sai quá nhiều lần", request.getUsername());
 
-                userService.lockUser(request.getUsername());
+                LocalDateTime endDate = LocalDateTime.now().plusMinutes(20);
+
+                banService.createSystemBan(
+                        user,
+                        BanReason.TOO_MANY_FAILED_LOGIN_ATTEMPTS, // thêm reason này vào enum
+                        endDate
+                );
+
                 userClockerService.resetFailedAttempts(request.getUsername());
-                throw new AccountLockedException();
+                throw new AccountLockedException(endDate);
             }
 
             throw new BadCredentialsException();
@@ -113,7 +126,12 @@ public class AuthenticationService {
 
 
     public IntrospectResponse introspect(IntrospectRequest request) {
-        return jwtService.introspect(request.getAccessToken());
+        IntrospectResponse introspectResponse = jwtService.introspect(request.getAccessToken());
+        banService.findActiveBanForUser(UUID.fromString(introspectResponse.getUserId()))
+                .ifPresent(ban -> {
+                    throw new AccountLockedException(ban.getEndDate());
+                });
+        return introspectResponse;
     }
 
     @Transactional(readOnly = true)

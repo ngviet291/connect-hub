@@ -16,7 +16,7 @@ public class IntrospectResponse {
     private boolean active;
     private String scope;
     private String clientId;
-    private String username;
+    private String userId;
     private long exp;
     private long iat;
     private String sub;

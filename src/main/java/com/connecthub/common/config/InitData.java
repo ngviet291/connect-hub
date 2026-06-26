@@ -12,6 +12,8 @@ import com.connecthub.modules.features.chat.repository.MessageReceiptRepository;
 import com.connecthub.modules.features.chat.repository.MessageRepository;
 import com.connecthub.modules.features.moderation.entity.Ban;
 import com.connecthub.modules.features.moderation.entity.Report;
+import com.connecthub.modules.features.moderation.enums.BanReason;
+import com.connecthub.modules.features.moderation.enums.ReasonType;
 import com.connecthub.modules.features.moderation.enums.ReportStatus;
 import com.connecthub.modules.features.moderation.repository.BanRepository;
 import com.connecthub.modules.features.moderation.repository.ReportRepository;
@@ -901,84 +903,71 @@ public class InitData implements CommandLineRunner {
 
 
     private void initReports() {
-        if (reportRepository.count() == 0) {
-            List<User> users = userRepository.findAll();
-            List<Post> posts = postRepository.findAll();
-
-            if (users.size() < 2) {
-                log.warn("⚠ Không đủ user để khởi tạo dữ liệu báo cáo!");
-                return;
-            }
-
-            Random random = new Random();
-            List<Report> reportsToSave = new ArrayList<>();
-
-            // Danh sách lý do báo cáo thực tế trên các mạng xã hội
-            String[] reportReasons = {
-                    "Inappropriate content",
-                    "Spam or misleading",
-                    "Harassment or hate speech",
-                    "Violence or dangerous organizations",
-                    "Intellectual property violation"
-            };
-
-            ReportStatus[] statuses = ReportStatus.values();
-            int targetReportsCount = 40;
-
-            log.info("⏳ Đang khởi tạo {} báo cáo bài viết/người dùng ngẫu nhiên...", targetReportsCount);
-
-            for (int i = 0; i < targetReportsCount; i++) {
-                User reporter = users.get(random.nextInt(users.size()));
-                User targetUser = null;
-                Post postProxy = null;
-
-                // Giả lập mô phỏng:
-                // - 70% báo cáo tập trung vào Bài viết rác (Post Report)
-                // - 30% báo cáo trực tiếp tài khoản người dùng phá hoại (User Report)
-                if (!posts.isEmpty() && random.nextInt(100) < 70) {
-                    Post randomPost = posts.get(random.nextInt(posts.size()));
-                    postProxy = postRepository.getReferenceById(randomPost.getId());
-
-                    // Đối tượng bị báo cáo (targetUser) chính là chủ nhân bài viết đó
-                    targetUser = randomPost.getUser();
-                } else {
-                    // Báo cáo tài khoản cá nhân trực tiếp
-                    do {
-                        targetUser = users.get(random.nextInt(users.size()));
-                    } while (targetUser.getId().equals(reporter.getId()));
-                }
-
-                // Đảm bảo người đi báo cáo không phải là người bị báo cáo (phòng trường hợp post report)
-                if (reporter.getId().equals(targetUser.getId())) {
-                    // Nếu trùng, đổi người báo cáo sang một user ngẫu nhiên khác
-                    do {
-                        reporter = users.get(random.nextInt(users.size()));
-                    } while (reporter.getId().equals(targetUser.getId()));
-                }
-
-                User reporterProxy = userRepository.getReferenceById(reporter.getId());
-                User targetUserProxy = userRepository.getReferenceById(targetUser.getId());
-
-                String randomReason = reportReasons[random.nextInt(reportReasons.length)];
-                ReportStatus randomStatus = statuses[random.nextInt(statuses.length)];
-
-                Report report = Report.builder()
-                        .id(UuidCreator.getTimeOrderedEpoch())
-                        .reporter(reporterProxy)
-                        .targetUser(targetUserProxy)
-                        .post(postProxy) // Nhận proxy bài viết hoặc null nếu là báo cáo user
-                        .reason(randomReason)
-                        .status(randomStatus)
-                        .build();
-
-                reportsToSave.add(report);
-            }
-
-            reportRepository.saveAll(reportsToSave);
-            log.info("✓ Khởi tạo thành công {} dữ liệu báo cáo (Reports)!", reportsToSave.size());
+        if (reportRepository.count() > 0) {
+            return;
         }
-    }
 
+        List<User> users = userRepository.findAll();
+        List<Post> posts = postRepository.findAll();
+
+        if (users.size() < 2) {
+            log.warn("⚠ Không đủ user để khởi tạo dữ liệu báo cáo!");
+            return;
+        }
+
+        Random random = new Random();
+        List<Report> reportsToSave = new ArrayList<>();
+
+        ReportStatus[] statuses = ReportStatus.values();
+        ReasonType[] reasons = ReasonType.values();
+
+        int targetReportsCount = 200;
+
+        log.info("⏳ Đang khởi tạo {} reports...", targetReportsCount);
+
+        for (int i = 0; i < targetReportsCount; i++) {
+
+            User reporter = users.get(random.nextInt(users.size()));
+
+            User targetUser = null;
+            Post post = null;
+
+            boolean isPostReport = !posts.isEmpty() && random.nextInt(100) < 70;
+
+            if (isPostReport) {
+                Post randomPost = posts.get(random.nextInt(posts.size()));
+                post = postRepository.getReferenceById(randomPost.getId());
+            } else {
+                User candidate;
+                do {
+                    candidate = users.get(random.nextInt(users.size()));
+                } while (candidate.getId().equals(reporter.getId()));
+
+                targetUser = userRepository.getReferenceById(candidate.getId());
+            }
+
+            // đảm bảo không self-report trong mọi trường hợp
+            if (targetUser != null && targetUser.getId().equals(reporter.getId())) {
+                continue;
+            }
+
+            Report report = Report.builder()
+                    .id(UuidCreator.getTimeOrderedEpoch())
+                    .reporter(userRepository.getReferenceById(reporter.getId()))
+                    .post(post)
+                    .targetUser(targetUser)
+                    .reason(reasons[random.nextInt(reasons.length)])
+                    .status(statuses[random.nextInt(statuses.length)])
+                    .description("Seed report data")
+                    .build();
+
+            reportsToSave.add(report);
+        }
+
+        reportRepository.saveAll(reportsToSave);
+
+        log.info("✓ Khởi tạo thành công {} reports!", reportsToSave.size());
+    }
     private void initBans() {
         if (banRepository.count() == 0) {
             List<User> users = userRepository.findAll();
@@ -990,71 +979,67 @@ public class InitData implements CommandLineRunner {
 
             Random random = new Random();
             List<Ban> bansToSave = new ArrayList<>();
+            Set<UUID> bannedUserIds = new HashSet<>();
 
-            // Sử dụng Set để đảm bảo mỗi user chỉ bị bốc trúng khóa 1 lần trong dữ liệu mẫu
-            Set<UUID> bannedUserIds = new HashSet<>(); // Đổi UUID thành Long/String nếu cần
-
-            // Danh sách lý do phạt thực tế
-            String[] banReasons = {
-                    "Violating community guidelines",
-                    "Spamming behavior detected",
-                    "Using abusive language or hate speech",
-                    "Multiple reports from other users",
-                    "Suspicious login activity"
-            };
-
-            // Mục tiêu tạo 15 bản ghi Ban ngẫu nhiên
             int targetBansCount = 15;
-            // Giới hạn an toàn dựa trên tổng số user hiện có (trừ đi 1 người làm admin)
             int finalCount = Math.min(targetBansCount, users.size() - 1);
-
+            BanReason[] reasons = BanReason.values();
             log.info("⏳ Đang khởi tạo {} lệnh khóa tài khoản (Ban) mô phỏng...", finalCount);
 
-            // Giả định chọn cố định User đầu tiên (Index 0) làm Admin thực hiện lệnh Ban để dữ liệu nhất quán
             User admin = users.get(0);
             User adminProxy = userRepository.getReferenceById(admin.getId());
 
             while (bansToSave.size() < finalCount) {
-                // Lấy ngẫu nhiên một user bị phạt (bắt đầu chọn từ Index 1 để tránh trùng với Admin)
                 User bannedUser = users.get(random.nextInt(users.size() - 1) + 1);
 
-                // Kiểm tra xem User này đã nằm trong danh sách phạt của lượt sinh dữ liệu này chưa
                 if (!bannedUserIds.contains(bannedUser.getId())) {
                     bannedUserIds.add(bannedUser.getId());
 
                     User bannedUserProxy = userRepository.getReferenceById(bannedUser.getId());
-                    String randomReason = banReasons[random.nextInt(banReasons.length)];
+                    BanReason randomReason = reasons[random.nextInt(reasons.length)];
 
-                    // Thiết lập ngày bắt đầu phạt ngẫu nhiên từ vài ngày trước cho đến hôm nay
-                    LocalDateTime startDate = LocalDateTime.now().minusDays(random.nextInt(5));
+                    LocalDateTime startDate = LocalDateTime.now().minusDays(random.nextInt(5) + 1);
                     LocalDateTime endDate = null;
 
-                    // Quy định thời hạn khóa:
-                    // - 80% khóa có thời hạn (3, 7, 30 ngày)
-                    // - 20% khóa vĩnh viễn (endDate = null)
                     int durationRoll = random.nextInt(100);
                     if (durationRoll < 30) {
-                        endDate = startDate.plusDays(3); // Khóa 3 ngày
+                        endDate = startDate.plusDays(3);
                     } else if (durationRoll < 60) {
-                        endDate = startDate.plusDays(7); // Khóa 7 ngày
+                        endDate = startDate.plusDays(7);
                     } else if (durationRoll < 80) {
-                        endDate = startDate.plusDays(30); // Khóa 30 ngày
+                        endDate = startDate.plusDays(30);
                     }
+                    // 20% còn lại: endDate = null → ban vĩnh viễn
 
-                    Ban ban = Ban.builder()
+                    // OTHER buộc phải có description theo @RequiredDescriptionForOther
+                    String description = randomReason == BanReason.OTHER
+                            ? "Vi phạm khác: hành vi không phù hợp với quy định cộng đồng"
+                            : null;
+
+                    Ban.BanBuilder banBuilder = Ban.builder()
                             .id(UuidCreator.getTimeOrderedEpoch())
                             .user(bannedUserProxy)
                             .bannedBy(adminProxy)
                             .reason(randomReason)
+                            .description(description)
                             .startDate(startDate)
-                            .endDate(endDate)
-                            .build();
+                            .endDate(endDate);
 
-                    bansToSave.add(ban);
+                    // 25% các ban có endDate (có thời hạn) sẽ được unban sớm, để test case REVOKED
+                    if (endDate != null && random.nextInt(100) < 25) {
+                        LocalDateTime unbannedAt = startDate.plusHours(random.nextInt(48) + 1);
+                        // chỉ unban sớm nếu thời điểm unban trước endDate
+                        if (unbannedAt.isBefore(endDate)) {
+                            banBuilder.unbannedBy(adminProxy)
+                                    .unbannedAt(unbannedAt)
+                                    .unbanReason("Đã xác minh user khắc phục vi phạm, gỡ khóa sớm");
+                        }
+                    }
+
+                    bansToSave.add(banBuilder.build());
                 }
             }
 
-            // Lưu toàn bộ danh sách lệnh phạt xuống DB một lần duy nhất
             banRepository.saveAll(bansToSave);
             log.info("✓ Khởi tạo thành công {} lệnh khóa tài khoản (Ban)!", bansToSave.size());
         }

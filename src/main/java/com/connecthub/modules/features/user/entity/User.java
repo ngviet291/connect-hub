@@ -99,10 +99,10 @@ public class User extends BaseEntity {
     private Set<MessageReceipt> messageReceipts;
 
     @OneToMany(mappedBy = "reporter")
-    private Set<Report> reporter;
+    private Set<Report> reporter; // các report mà user này đã tạo
 
     @OneToMany(mappedBy = "targetUser")
-    private Set<Report> reported;
+    private Set<Report> reported; // Các report mà user này bị report
 
     @OneToMany(mappedBy = "user")
     private Set<Ban> target;
@@ -110,11 +110,15 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "bannedBy")
     private Set<Ban> admin;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "resolvedBy")
+    private Set<Report> resolvedReports;  // cac report ma user da xu li
 }
