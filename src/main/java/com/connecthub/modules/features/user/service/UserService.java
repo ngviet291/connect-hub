@@ -49,7 +49,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final FollowRepository followRepository;
-    private final NotificationRepository notificationRepository;
     private final MediaStorageService mediaStorageService;
     private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L; // 5 MB
     private final NotificationService notificationService;
@@ -335,6 +334,7 @@ public class UserService {
         FollowStatsResponse stats = userRepository.countFollowStats(userId);
         return stats != null ? stats : new FollowStatsResponse(0L, 0L);
     }
+
     // block user by id
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
@@ -370,6 +370,7 @@ public class UserService {
 
         return userMapper.toUserResponse(blockedUser);
     }
+
     // unblock user
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
@@ -380,40 +381,41 @@ public class UserService {
         User blockedUser = userRepository.findById(id)
                 .orElseThrow(UserNotFoundException::new);
         // kiểm tra xem có block hay k
-        boolean isBlock =userBlockRepository.existsByBlockedIdAndBlockerId(currentUserId, id);
-        if(!isBlock){
+        boolean isBlock = userBlockRepository.existsByBlockedIdAndBlockerId(currentUserId, id);
+        if (!isBlock) {
             throw new UserNotBlockedException();
         }
         // Xóa mối quan hệ block
         userBlockRepository.deleteByBlockedIdAndBlockerId(id, currentUserId);
         return userMapper.toUserResponse(blockedUser);
     }
-        @PreAuthorize("hasRole('ROLE_USER')")
-        // get list blocked users by current user(lấy danh sách người dùng bị chặn bởi người dùng hiện tại)
-        @Transactional(readOnly = true)
-        public CursorResponse<UserSummaryResponse> getBlockedUsers(UUID cursor, int size) {
-            UUID currentUserId = AppUtil.userIdFormAuthentication();
 
-            List<UserBlock> blockedUsers = new ArrayList<>(
-                    userBlockRepository.findBlockedUsers(currentUserId, cursor, Limit.of(size + 1))
-            );
+    @PreAuthorize("hasRole('ROLE_USER')")
+    // get list blocked users by current user(lấy danh sách người dùng bị chặn bởi người dùng hiện tại)
+    @Transactional(readOnly = true)
+    public CursorResponse<UserSummaryResponse> getBlockedUsers(UUID cursor, int size) {
+        UUID currentUserId = AppUtil.userIdFormAuthentication();
 
-            boolean hasNext = blockedUsers.size() > size;
-            if (hasNext) {
-                blockedUsers.removeLast();
-            }
+        List<UserBlock> blockedUsers = new ArrayList<>(
+                userBlockRepository.findBlockedUsers(currentUserId, cursor, Limit.of(size + 1))
+        );
 
-            String nextCursor = blockedUsers.isEmpty() ? null : blockedUsers.getLast().getId().toString();
-            List<UserSummaryResponse> blockedUserResponses = blockedUsers.stream()
-                    .map(userBlock -> userMapper.toUserSummaryResponse(userBlock.getBlocked()))
-                    .toList();
-
-            return CursorResponse.<UserSummaryResponse>builder()
-                    .content(blockedUserResponses)
-                    .hasNext(hasNext)
-                    .nextCursor(nextCursor)
-                    .build();
+        boolean hasNext = blockedUsers.size() > size;
+        if (hasNext) {
+            blockedUsers.removeLast();
         }
+
+        String nextCursor = blockedUsers.isEmpty() ? null : blockedUsers.getLast().getId().toString();
+        List<UserSummaryResponse> blockedUserResponses = blockedUsers.stream()
+                .map(userBlock -> userMapper.toUserSummaryResponse(userBlock.getBlocked()))
+                .toList();
+
+        return CursorResponse.<UserSummaryResponse>builder()
+                .content(blockedUserResponses)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .build();
+    }
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)

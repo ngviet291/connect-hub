@@ -16,6 +16,6 @@ import java.time.LocalDateTime;
 public class UpdateStatusResponse {
     private String reportId;
     private ReportStatus status;
-    private UserSummaryResponse resolveBy;
+    private UserSummaryResponse resolvedBy;
     private LocalDateTime resolvedAt;
 }

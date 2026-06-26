@@ -12,6 +12,7 @@ import com.connecthub.modules.features.chat.repository.MessageReceiptRepository;
 import com.connecthub.modules.features.chat.repository.MessageRepository;
 import com.connecthub.modules.features.moderation.entity.Ban;
 import com.connecthub.modules.features.moderation.entity.Report;
+import com.connecthub.modules.features.moderation.enums.ReasonType;
 import com.connecthub.modules.features.moderation.enums.ReportStatus;
 import com.connecthub.modules.features.moderation.repository.BanRepository;
 import com.connecthub.modules.features.moderation.repository.ReportRepository;
@@ -901,82 +902,70 @@ public class InitData implements CommandLineRunner {
 
 
     private void initReports() {
-        if (reportRepository.count() == 0) {
-            List<User> users = userRepository.findAll();
-            List<Post> posts = postRepository.findAll();
-
-            if (users.size() < 2) {
-                log.warn("⚠ Không đủ user để khởi tạo dữ liệu báo cáo!");
-                return;
-            }
-
-            Random random = new Random();
-            List<Report> reportsToSave = new ArrayList<>();
-
-            // Danh sách lý do báo cáo thực tế trên các mạng xã hội
-            String[] reportReasons = {
-                    "Inappropriate content",
-                    "Spam or misleading",
-                    "Harassment or hate speech",
-                    "Violence or dangerous organizations",
-                    "Intellectual property violation"
-            };
-
-            ReportStatus[] statuses = ReportStatus.values();
-            int targetReportsCount = 40;
-
-            log.info("⏳ Đang khởi tạo {} báo cáo bài viết/người dùng ngẫu nhiên...", targetReportsCount);
-
-            for (int i = 0; i < targetReportsCount; i++) {
-                User reporter = users.get(random.nextInt(users.size()));
-                User targetUser = null;
-                Post postProxy = null;
-
-                // Giả lập mô phỏng:
-                // - 70% báo cáo tập trung vào Bài viết rác (Post Report)
-                // - 30% báo cáo trực tiếp tài khoản người dùng phá hoại (User Report)
-                if (!posts.isEmpty() && random.nextInt(100) < 70) {
-                    Post randomPost = posts.get(random.nextInt(posts.size()));
-                    postProxy = postRepository.getReferenceById(randomPost.getId());
-
-                    // Đối tượng bị báo cáo (targetUser) chính là chủ nhân bài viết đó
-                    targetUser = randomPost.getUser();
-                } else {
-                    // Báo cáo tài khoản cá nhân trực tiếp
-                    do {
-                        targetUser = users.get(random.nextInt(users.size()));
-                    } while (targetUser.getId().equals(reporter.getId()));
-                }
-
-                // Đảm bảo người đi báo cáo không phải là người bị báo cáo (phòng trường hợp post report)
-                if (reporter.getId().equals(targetUser.getId())) {
-                    // Nếu trùng, đổi người báo cáo sang một user ngẫu nhiên khác
-                    do {
-                        reporter = users.get(random.nextInt(users.size()));
-                    } while (reporter.getId().equals(targetUser.getId()));
-                }
-
-                User reporterProxy = userRepository.getReferenceById(reporter.getId());
-                User targetUserProxy = userRepository.getReferenceById(targetUser.getId());
-
-                String randomReason = reportReasons[random.nextInt(reportReasons.length)];
-                ReportStatus randomStatus = statuses[random.nextInt(statuses.length)];
-
-                Report report = Report.builder()
-                        .id(UuidCreator.getTimeOrderedEpoch())
-                        .reporter(reporterProxy)
-                        .targetUser(targetUserProxy)
-                        .post(postProxy) // Nhận proxy bài viết hoặc null nếu là báo cáo user
-                        .reason(randomReason)
-                        .status(randomStatus)
-                        .build();
-
-                reportsToSave.add(report);
-            }
-
-            reportRepository.saveAll(reportsToSave);
-            log.info("✓ Khởi tạo thành công {} dữ liệu báo cáo (Reports)!", reportsToSave.size());
+        if (reportRepository.count() > 0) {
+            return;
         }
+
+        List<User> users = userRepository.findAll();
+        List<Post> posts = postRepository.findAll();
+
+        if (users.size() < 2) {
+            log.warn("⚠ Không đủ user để khởi tạo dữ liệu báo cáo!");
+            return;
+        }
+
+        Random random = new Random();
+        List<Report> reportsToSave = new ArrayList<>();
+
+        ReportStatus[] statuses = ReportStatus.values();
+        ReasonType[] reasons = ReasonType.values();
+
+        int targetReportsCount = 200;
+
+        log.info("⏳ Đang khởi tạo {} reports...", targetReportsCount);
+
+        for (int i = 0; i < targetReportsCount; i++) {
+
+            User reporter = users.get(random.nextInt(users.size()));
+
+            User targetUser = null;
+            Post post = null;
+
+            boolean isPostReport = !posts.isEmpty() && random.nextInt(100) < 70;
+
+            if (isPostReport) {
+                Post randomPost = posts.get(random.nextInt(posts.size()));
+                post = postRepository.getReferenceById(randomPost.getId());
+            } else {
+                User candidate;
+                do {
+                    candidate = users.get(random.nextInt(users.size()));
+                } while (candidate.getId().equals(reporter.getId()));
+
+                targetUser = userRepository.getReferenceById(candidate.getId());
+            }
+
+            // đảm bảo không self-report trong mọi trường hợp
+            if (targetUser != null && targetUser.getId().equals(reporter.getId())) {
+                continue;
+            }
+
+            Report report = Report.builder()
+                    .id(UuidCreator.getTimeOrderedEpoch())
+                    .reporter(userRepository.getReferenceById(reporter.getId()))
+                    .post(post)
+                    .targetUser(targetUser)
+                    .reason(reasons[random.nextInt(reasons.length)])
+                    .status(statuses[random.nextInt(statuses.length)])
+                    .description("Seed report data")
+                    .build();
+
+            reportsToSave.add(report);
+        }
+
+        reportRepository.saveAll(reportsToSave);
+
+        log.info("✓ Khởi tạo thành công {} reports!", reportsToSave.size());
     }
 
     private void initBans() {

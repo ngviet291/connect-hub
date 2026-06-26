@@ -2,7 +2,6 @@ package com.connecthub.modules.features.moderation.dto.response;
 
 import com.connecthub.modules.features.moderation.enums.ReasonType;
 import com.connecthub.modules.features.moderation.enums.ReportStatus;
-import com.connecthub.modules.features.post.enums.ReactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

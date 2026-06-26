@@ -47,14 +47,23 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request
     ) {
-
         Map<String, String> errors = new HashMap<>();
 
+        // Field-level errors
         ex.getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
                         errors.put(
                                 error.getField(),
+                                error.getDefaultMessage()
+                        ));
+
+        // Class-level (object) errors - đây là phần bạn đang thiếu
+        ex.getBindingResult()
+                .getGlobalErrors()
+                .forEach(error ->
+                        errors.put(
+                                error.getObjectName(), // hoặc dùng key cố định như "request"
                                 error.getDefaultMessage()
                         ));
 
