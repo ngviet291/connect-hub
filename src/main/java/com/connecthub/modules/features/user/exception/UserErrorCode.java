@@ -7,10 +7,9 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum UserErrorCode implements BaseErrorCode {
-    USER_ALREADY_FOLLOWED("You are already following this user", HttpStatus.CONFLICT),
+    USER_ALREADY_FOLLOWED("error.user.already_followed", HttpStatus.CONFLICT),
 
     ;
-
 
     private final String message;
     private final HttpStatusCode statusCode;

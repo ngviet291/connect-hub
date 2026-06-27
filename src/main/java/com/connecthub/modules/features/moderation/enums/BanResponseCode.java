@@ -1,14 +1,13 @@
 package com.connecthub.modules.features.moderation.enums;
 
-import com.connecthub.common.exception.BaseErrorCode;
 import lombok.Getter;
 
 @Getter
 public enum BanResponseCode {
 
-    CREATE_BAN_SUCCESS(200, "Create ban successfully"),
-    GET_BANS_SUCCESS(200, "Get bans successfully"),
-    UNBAN_SUCCESS(200, "Unban successfully");
+    CREATE_BAN_SUCCESS(200, "success.ban.create"),
+    GET_BANS_SUCCESS(200, "success.ban.get_bans"),
+    UNBAN_SUCCESS(200, "success.ban.unban");
 
     private final int code;
     private final String message;
