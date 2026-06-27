@@ -4,12 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum ReportResponseCode {
-
-    CREATED(201, "Report created successfully"),
-    GET_REPORTS(200, "Reports retrieved successfully"),
-    GET_REPORT(200, "Report retrieved successfully"),
-    UPDATE_STATUS(200, "Report status updated successfully"),
-    GET_MY_REPORTS(200, "My reports retrieved successfully");
+    CREATED(201, "success.report.created"),
+    GET_REPORTS(200, "success.report.get_reports"),
+    GET_REPORT(200, "success.report.get_report"),
+    UPDATE_STATUS(200, "success.report.update_status"),
+    GET_MY_REPORTS(200, "success.report.get_my_reports");
 
     private final int code;
     private final String message;
@@ -18,5 +17,4 @@ public enum ReportResponseCode {
         this.code = code;
         this.message = message;
     }
-
 }

@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum AuthResponseCode {
-    REGISTER_SUCCESS("Registration successful", 1000),
-    LOGIN_SUCCESS("Login successful", 1001),
-    LOGOUT_SUCCESS("Logout successful", 1002),
-    TOKEN_REFRESH_SUCCESS("Token refresh successful", 1003),
-    PASSWORD_CHANGE_SUCCESS("Password change successful", 1004),
-    INTROSPECT_SUCCESS("Token introspection successful", 1005);
+    REGISTER_SUCCESS("success.auth.register", 1000),
+    LOGIN_SUCCESS("success.auth.login", 1001),
+    LOGOUT_SUCCESS("success.auth.logout", 1002),
+    TOKEN_REFRESH_SUCCESS("success.auth.token_refresh", 1003),
+    PASSWORD_CHANGE_SUCCESS("success.auth.password_change", 1004),
+    INTROSPECT_SUCCESS("success.auth.introspect", 1005);
 
     private final String message;
     private final int code;
@@ -18,6 +18,4 @@ public enum AuthResponseCode {
         this.message = message;
         this.code = code;
     }
-
-
 }

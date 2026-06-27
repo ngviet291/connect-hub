@@ -7,22 +7,22 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ChatErrorCode implements BaseErrorCode {
 
-    INVALID_CHAT_REQUEST("Invalid chat request", HttpStatus.BAD_REQUEST),
-    REPLY_TO_MESSAGE_NOT_FOUND("Reply to message {messageId} not found", HttpStatus.NOT_FOUND),
-    INVALID_TYPE_CONVERSATION("Conversation is not {conversationType}", HttpStatus.BAD_REQUEST),
-    SENDER_NOT_CONVERSATION_MEMBER("Sender is not a member of the conversation", HttpStatus.FORBIDDEN),
-    CONVERSATION_NOT_FOUND("Conversation not found", HttpStatus.NOT_FOUND),
-    CONVERSATION_MEMBER_NOT_FOUND("Conversation member not found", HttpStatus.NOT_FOUND),
-    RECIPIENT_BLOCKED("You have blocked this user", HttpStatus.FORBIDDEN),
-    BLOCKED_BY_SENDER("You have been blocked by this user", HttpStatus.FORBIDDEN),
-    MESSAGE_NOT_FOUND("Message {messageId} not found", HttpStatus.NOT_FOUND),
-    CONVERSATION_ACCESS_DENIED("You do not have access to this conversation", HttpStatus.FORBIDDEN),
-    GROUP_MEMBER_LIMIT_EXCEEDED("Group member limit of {maxGroupMember} exceeded", HttpStatus.BAD_REQUEST),
-    RECIPIENT_NOT_PROVIDED("Recipient not provided", HttpStatus.BAD_REQUEST),
-    INVALID_MEMBER_STATUS("Invalid member status: {status}", HttpStatus.BAD_REQUEST),
-    CANNOT_REMOVE_ADMIN("Cannot remove admin from the group", HttpStatus.BAD_REQUEST),
-    CONVERSATION_PERMISSION_DENIED("You do not have permission to access this conversation", HttpStatus.FORBIDDEN),
-    ADMIN_CANNOT_LEAVE_GROUP("Admin cannot leave the group", HttpStatus.BAD_REQUEST),
+    INVALID_CHAT_REQUEST("error.chat.invalid_chat_request", HttpStatus.BAD_REQUEST),
+    REPLY_TO_MESSAGE_NOT_FOUND("error.chat.reply_to_message_not_found", HttpStatus.NOT_FOUND),
+    INVALID_TYPE_CONVERSATION("error.chat.invalid_type_conversation", HttpStatus.BAD_REQUEST),
+    SENDER_NOT_CONVERSATION_MEMBER("error.chat.sender_not_conversation_member", HttpStatus.FORBIDDEN),
+    CONVERSATION_NOT_FOUND("error.chat.conversation_not_found", HttpStatus.NOT_FOUND),
+    CONVERSATION_MEMBER_NOT_FOUND("error.chat.conversation_member_not_found", HttpStatus.NOT_FOUND),
+    RECIPIENT_BLOCKED("error.chat.recipient_blocked", HttpStatus.FORBIDDEN),
+    BLOCKED_BY_SENDER("error.chat.blocked_by_sender", HttpStatus.FORBIDDEN),
+    MESSAGE_NOT_FOUND("error.chat.message_not_found", HttpStatus.NOT_FOUND),
+    CONVERSATION_ACCESS_DENIED("error.chat.conversation_access_denied", HttpStatus.FORBIDDEN),
+    GROUP_MEMBER_LIMIT_EXCEEDED("error.chat.group_member_limit_exceeded", HttpStatus.BAD_REQUEST),
+    RECIPIENT_NOT_PROVIDED("error.chat.recipient_not_provided", HttpStatus.BAD_REQUEST),
+    INVALID_MEMBER_STATUS("error.chat.invalid_member_status", HttpStatus.BAD_REQUEST),
+    CANNOT_REMOVE_ADMIN("error.chat.cannot_remove_admin", HttpStatus.BAD_REQUEST),
+    CONVERSATION_PERMISSION_DENIED("error.chat.conversation_permission_denied", HttpStatus.FORBIDDEN),
+    ADMIN_CANNOT_LEAVE_GROUP("error.chat.admin_cannot_leave_group", HttpStatus.BAD_REQUEST),
 
     ;
     private final String message;

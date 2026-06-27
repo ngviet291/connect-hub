@@ -6,22 +6,22 @@ import lombok.Getter;
 public enum NotificationResponseCode {
     READ_NOTIFICATION(
             8000,
-            "Notification marked as read successfully"
+            "success.notification.read"
     ),
 
     READ_ALL_NOTIFICATION(
             8001,
-            "All notifications marked as read successfully"
+            "success.notification.read_all"
     ),
 
     COUNT_UNREAD(
             8002,
-            "Unread notification count retrieved successfully"
+            "success.notification.count_unread"
     ),
 
     GET_NOTIFICATION(
             8003,
-            "Notifications retrieved successfully"
+            "success.notification.get"
     );
 
     private final int code;

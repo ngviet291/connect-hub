@@ -114,7 +114,10 @@
             <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- Faker -->
         <dependency>
             <groupId>net.datafaker</groupId>

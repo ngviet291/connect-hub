@@ -4,19 +4,20 @@ import lombok.Getter;
 
 @Getter
 public enum PostResponseCode {
-    CREATE_POST_SUCCESS("Post created successfully", 2000),
-    GET_POST_SUCCESS("Post retrieved successfully", 2001),
-    UPDATE_POST_SUCCESS("Post updated successfully", 2002),
-    DELETE_POST_SUCCESS("Post deleted successfully", 2003),
-    GET_FEED_SUCCESS("Feed retrieved successfully", 2004),
-    GET_HASHTAG_POSTS_SUCCESS("Posts by hashtag retrieved successfully", 2005),
-    ADD_HASHTAG_SUCCESS("Hashtag added to post successfully", 2006),
-    CREATE_REPLY_SUCCESS("Reply created successfully", 2007),
-    GET_REPLIES_SUCCESS("Replies retrieved successfully", 2008),
-    REACTION_SUCCESS("Reaction updated successfully", 2009),
-    BOOKMARK_SUCCESS("Bookmark updated successfully", 2010),
-    GET_BOOKMARKS_SUCCESS("Bookmarks retrieved successfully", 2011),
-    REPOST_SUCCESS("Repost updated successfully", 2012);
+    CREATE_POST_SUCCESS("success.post.create", 2000),
+    GET_POST_SUCCESS("success.post.get", 2001),
+    UPDATE_POST_SUCCESS("success.post.update", 2002),
+    DELETE_POST_SUCCESS("success.post.delete", 2003),
+    GET_FEED_SUCCESS("success.post.get_feed", 2004),
+    GET_HASHTAG_POSTS_SUCCESS("success.post.get_hashtag_posts", 2005),
+    ADD_HASHTAG_SUCCESS("success.post.add_hashtag", 2006),
+    CREATE_REPLY_SUCCESS("success.post.create_reply", 2007),
+    GET_REPLIES_SUCCESS("success.post.get_replies", 2008),
+    REACTION_SUCCESS("success.post.reaction", 2009),
+    BOOKMARK_SUCCESS("success.post.bookmark", 2010),
+    GET_BOOKMARKS_SUCCESS("success.post.get_bookmarks", 2011),
+    REPOST_SUCCESS("success.post.repost", 2012),
+    VIEW_RECORDED_SUCCESS("success.post.view_recorded", 2013);
     private final String message;
     private final int code;
 

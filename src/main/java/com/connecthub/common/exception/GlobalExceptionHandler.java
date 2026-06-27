@@ -3,6 +3,7 @@ package com.connecthub.common.exception;
 import com.connecthub.common.dto.response.AccountLockedErrorResponse;
 import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.common.util.MessageUtil;
 import com.connecthub.modules.features.user.exception.AccountLockedException;
 import com.connecthub.modules.features.user.exception.DuplicateEmailException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,12 @@ import java.util.Set;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final MessageUtil messageUtil;
+
+    public GlobalExceptionHandler(MessageUtil messageUtil) {
+        this.messageUtil = messageUtil;
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
 
@@ -169,7 +176,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleParameterizedException(ParameterizedException e, HttpServletRequest request) {
 
         String message = e.getErrorCode().getMessage();
-
+        message = messageUtil.get(message);
         Map<String, Object> parameters = e.getParameters();
         if (parameters != null && !parameters.isEmpty()) {
             message = mapAttributes(message, parameters);
