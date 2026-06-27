@@ -20,6 +20,8 @@ import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +38,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BanService {
 
+    private static final String ACTIVE_BAN_CACHE = "activeBan";
+
     private final BanMapper banMapper;
     private final BanRepository banRepository;
     private final UserRepository userRepository;
@@ -44,10 +48,10 @@ public class BanService {
 
     @Transactional
     @PreAuthorize("hasRole('MODERATOR')")
+    @CacheEvict(value = ACTIVE_BAN_CACHE, key = "#request.userId")
     public BanResponse createBan(CreateBanRequest request) {
         Ban banEntity = banMapper.toBan(request);
         UUID issuerId = AppUtil.userIdFormAuthentication();
-
 
         // nếu người dùng đã bị cấm, ném ra ngoại lệ
         if (banRepository.existsActiveBanByUserId(request.getUserId(), LocalDateTime.now())) {
@@ -81,6 +85,7 @@ public class BanService {
 
     @Transactional
     @PreAuthorize("hasRole('MODERATOR')")
+    @CacheEvict(value = ACTIVE_BAN_CACHE, key = "#result.userId")
     public BanResponse unbanUser(UUID banId, UnbanRequest request) {
         Ban ban = banRepository.findById(banId).orElseThrow(() -> new BanNotFoundException(banId.toString()));
 
@@ -105,6 +110,7 @@ public class BanService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @CacheEvict(value = ACTIVE_BAN_CACHE, key = "#user.id")
     public Ban createSystemBan(User user, BanReason reason, LocalDateTime endDate) {
         log.info("Creating system ban for user {} with reason {} until {}", user.getId(), reason, endDate);
         Ban ban = Ban.builder()
@@ -120,6 +126,7 @@ public class BanService {
         return banRepository.save(ban);
     }
 
+    @Cacheable(value = ACTIVE_BAN_CACHE, key = "#userId")
     public Optional<Ban> findActiveBanForUser(UUID userId) {
         return banRepository.findActiveBanForUser(userId, LocalDateTime.now());
     }
