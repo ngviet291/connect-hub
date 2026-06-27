@@ -23,11 +23,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(@Param("username") String username);
 
     boolean existsByEmail(String email);
-
     boolean existsByUsername(String username);
-
     boolean existsByPhoneNumber(String phoneNumber);
-
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, UUID id);
 
     @Query("""
@@ -45,4 +42,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE :cursor IS NULL OR u.id < :cursor ORDER BY u.id DESC ")
     List<User> findAllUsers(@Param("cursor") UUID cursor, Limit limit);
+
+    @Query("""
+        SELECT u FROM User u
+        WHERE u.isActive = true
+        AND (
+            LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        AND (:cursor IS NULL OR u.id < :cursor)
+        ORDER BY u.id DESC
+    """)
+    List<User> searchByNameOrUsername(@Param("keyword") String keyword,
+                                      @Param("cursor") UUID cursor,
+                                      Limit limit);
+
+    // Tìm chính xác theo username để dùng cho mention
+    @Query("""
+        SELECT u FROM User u
+        WHERE LOWER(u.username) = LOWER(TRIM(:username))
+    """)
+    Optional<User> findExactByUsername(@Param("username") String username);
 }

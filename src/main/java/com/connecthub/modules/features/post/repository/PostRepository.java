@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +14,7 @@ import java.util.UUID;
 @Repository
 public interface PostRepository extends JpaRepository<Post, UUID> {
 
-    // ── Fetch with details ────────────────────────────────────────────────────
-
+    // Fetch đầy đủ 1 post theo ID (không có pagination nên không bị lỗi multiple bags)
     @Query("""
         SELECT p FROM Post p
         LEFT JOIN FETCH p.media
@@ -24,91 +22,86 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         LEFT JOIN FETCH p.quotePost qp
         LEFT JOIN FETCH qp.media
         LEFT JOIN FETCH qp.user
+        LEFT JOIN FETCH p.postHashtags ph
+        LEFT JOIN FETCH ph.hashtag
+        LEFT JOIN FETCH p.mentions m
+        LEFT JOIN FETCH m.user
         WHERE p.id = :postId
+        AND p.isDeleted = false
     """)
     Optional<Post> findByIdWithDetails(@Param("postId") UUID postId);
 
+    // Fetch đầy đủ nhiều post theo danh sách IDs (không có pagination)
     @Query("""
-        SELECT p FROM Post p
+        SELECT DISTINCT p FROM Post p
         LEFT JOIN FETCH p.media
         LEFT JOIN FETCH p.user
         LEFT JOIN FETCH p.quotePost qp
         LEFT JOIN FETCH qp.media
         LEFT JOIN FETCH qp.user
+        LEFT JOIN FETCH p.postHashtags ph
+        LEFT JOIN FETCH ph.hashtag
+        LEFT JOIN FETCH p.mentions m
+        LEFT JOIN FETCH m.user
+        WHERE p.id IN :ids
+    """)
+    List<Post> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
+
+    // Query 1: chỉ lấy IDs cho feed (có pagination, không JOIN collection)
+    @Query("""
+        SELECT p.id FROM Post p
         WHERE p.visibility = 'PUBLIC'
         AND p.isDeleted = false
         AND (:cursor IS NULL OR p.id < :cursor)
         ORDER BY p.id DESC
     """)
-    List<Post> findPublicFeedWithDetails(@Param("cursor") UUID cursor, Limit limit);
+    List<UUID> findPublicFeedIds(@Param("cursor") UUID cursor, Limit limit);
 
+    // Query 1: chỉ lấy IDs của replies (có pagination, không JOIN collection)
     @Query("""
-        SELECT p FROM Post p
-        LEFT JOIN FETCH p.media
-        LEFT JOIN FETCH p.user
-        LEFT JOIN FETCH p.quotePost qp
-        LEFT JOIN FETCH qp.media
-        LEFT JOIN FETCH qp.user
+        SELECT p.id FROM Post p
         WHERE p.parentPost.id = :parentPostId
         AND p.isDeleted = false
         AND (:cursor IS NULL OR p.id < :cursor)
         ORDER BY p.id DESC
     """)
-    List<Post> findRepliesByParentPostIdWithDetails(
+    List<UUID> findRepliesIds(
             @Param("parentPostId") UUID parentPostId,
             @Param("cursor") UUID cursor,
             Limit limit);
 
-    // ── Increment / Decrement counters (runtime) ──────────────────────────────
-
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.commentCount = p.commentCount + 1 WHERE p.id = :postId")
     void incrementCommentCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.commentCount = GREATEST(p.commentCount - 1, 0) WHERE p.id = :postId")
     void decrementCommentCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.reactionCount = p.reactionCount + 1 WHERE p.id = :postId")
     void incrementReactionCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.reactionCount = GREATEST(p.reactionCount - 1, 0) WHERE p.id = :postId")
     void decrementReactionCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.bookmarkCount = p.bookmarkCount + 1 WHERE p.id = :postId")
     void incrementBookmarkCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.bookmarkCount = GREATEST(p.bookmarkCount - 1, 0) WHERE p.id = :postId")
     void decrementBookmarkCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.repostCount = p.repostCount + 1 WHERE p.id = :postId")
     void incrementRepostCount(@Param("postId") UUID postId);
 
-    @Transactional
     @Modifying
     @Query("UPDATE Post p SET p.repostCount = GREATEST(p.repostCount - 1, 0) WHERE p.id = :postId")
     void decrementRepostCount(@Param("postId") UUID postId);
 
-    @Transactional
-    @Modifying
-    @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :postId")
-    void incrementViewCount(@Param("postId") UUID postId);
-
-    // ── Sync counters (init data) ─────────────────────────────────────────────
-
-    @Transactional
     @Modifying
     @Query("""
         UPDATE Post p SET p.reactionCount = (
@@ -117,7 +110,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """)
     void syncAllReactionCounts();
 
-    @Transactional
     @Modifying
     @Query("""
         UPDATE Post p SET p.commentCount = (
@@ -126,7 +118,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """)
     void syncAllCommentCounts();
 
-    @Transactional
     @Modifying
     @Query("""
         UPDATE Post p SET p.repostCount = (
@@ -135,7 +126,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """)
     void syncAllRepostCounts();
 
-    @Transactional
     @Modifying
     @Query("""
         UPDATE Post p SET p.bookmarkCount = (
@@ -144,7 +134,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """)
     void syncAllBookmarkCounts();
 
-    @Transactional
     @Modifying
     @Query("""
         UPDATE Post p SET p.viewCount = (
@@ -152,4 +141,17 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         )
     """)
     void syncAllViewCounts();
+
+    // Tìm kiếm post theo keyword trong nội dung
+    @Query("""
+        SELECT p.id FROM Post p
+        WHERE p.visibility = 'PUBLIC'
+        AND p.isDeleted = false
+        AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        AND (:cursor IS NULL OR p.id < :cursor)
+        ORDER BY p.id DESC
+    """)
+    List<UUID> searchIdsByKeyword(@Param("keyword") String keyword,
+                                  @Param("cursor") UUID cursor,
+                                  Limit limit);
 }

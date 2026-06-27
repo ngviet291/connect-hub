@@ -17,7 +17,11 @@ public enum PostResponseCode {
     BOOKMARK_SUCCESS("success.post.bookmark", 2010),
     GET_BOOKMARKS_SUCCESS("success.post.get_bookmarks", 2011),
     REPOST_SUCCESS("success.post.repost", 2012),
-    VIEW_RECORDED_SUCCESS("success.post.view_recorded", 2013);
+    VIEW_RECORDED_SUCCESS("success.post.view_recorded", 2013),
+    UPLOAD_MEDIA_SUCCESS("success.post.upload_media", 2014),
+    GET_POST_MENTIONS_SUCCESS("success.post.get_mentions", 2015),
+    GET_MY_MENTIONS_SUCCESS("success.mention.get_my", 2016);
+
     private final String message;
     private final int code;
 

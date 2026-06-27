@@ -8,12 +8,12 @@ import java.util.UUID;
 
 public class MentionedUserNotFoundException extends ParameterizedException {
 
-    private static final String USER_ID = "userId";
+//    public MentionedUserNotFoundException(UUID userId) {
+//        super(ErrorCode.MENTIONED_USER_NOT_FOUND, Map.of("userId", userId));
+//    }
 
-    public MentionedUserNotFoundException(UUID userId) {
-        super(
-                ErrorCode.MENTIONED_USER_NOT_FOUND,
-                Map.of(USER_ID, userId)
-        );
+    // Overload dùng khi tìm theo username
+    public MentionedUserNotFoundException(String username) {
+        super(ErrorCode.MENTIONED_USER_NOT_FOUND, Map.of("username", username));
     }
 }
