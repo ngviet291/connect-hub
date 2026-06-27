@@ -25,6 +25,8 @@ public class PostResponse {
     private QuotePostResponse quotePost;
 
     private List<MediaResponse> media;
+    private List<String> hashtags;
+    private List<UserSummaryResponse> mentions;
 
     private int reactionCount;
     private int commentCount;

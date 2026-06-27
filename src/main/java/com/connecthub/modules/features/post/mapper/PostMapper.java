@@ -5,7 +5,9 @@ import com.connecthub.modules.features.post.dto.response.MediaResponse;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
 import com.connecthub.modules.features.post.dto.response.QuotePostResponse;
 import com.connecthub.modules.features.post.entity.Media;
+import com.connecthub.modules.features.post.entity.Mention;
 import com.connecthub.modules.features.post.entity.Post;
+import com.connecthub.modules.features.post.entity.PostHashtag;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import org.mapstruct.Mapper;
@@ -39,7 +41,14 @@ public interface PostMapper {
     @Mapping(target = "bookmarkCount", ignore = true)
     @Mapping(target = "viewCount",     ignore = true)
     Post toPost(PostRequest request);
+
     UserSummaryResponse toUserSummaryResponse(User user);
+
+    // Map id -> mediaId, size -> fileSize
+    @Mapping(target = "mediaId",  source = "id")
+    @Mapping(target = "fileSize", expression = "java(media.getSize() != null ? media.getSize().longValue() : null)")
+    @Mapping(target = "fileName", ignore = true)
+    @Mapping(target = "mimeType", ignore = true)
     MediaResponse toMediaResponse(Media media);
 
     @Mapping(target = "author", source = "user")
@@ -52,11 +61,11 @@ public interface PostMapper {
                 .author(toUserSummaryResponse(post.getUser()))
                 .content(post.getContent())
                 .visibility(post.getVisibility())
-                .parentPostId(post.getParentPost() != null
-                        ? post.getParentPost().getId() : null)
-                .quotePost(post.getQuotePost() != null
-                        ? toQuotePostResponse(post.getQuotePost()) : null)
+                .parentPostId(post.getParentPost() != null ? post.getParentPost().getId() : null)
+                .quotePost(post.getQuotePost() != null ? toQuotePostResponse(post.getQuotePost()) : null)
                 .media(mapMedia(post.getMedia()))
+                .hashtags(mapHashtags(post.getPostHashtags()))
+                .mentions(mapMentions(post.getMentions()))
                 .reactionCount((int) post.getReactionCount())
                 .commentCount((int) post.getCommentCount())
                 .repostCount((int) post.getRepostCount())
@@ -73,5 +82,19 @@ public interface PostMapper {
     default List<MediaResponse> mapMedia(Set<Media> media) {
         if (media == null) return List.of();
         return media.stream().map(this::toMediaResponse).toList();
+    }
+
+    default List<String> mapHashtags(Set<PostHashtag> postHashtags) {
+        if (postHashtags == null) return List.of();
+        return postHashtags.stream()
+                .map(ph -> ph.getHashtag().getName())
+                .toList();
+    }
+
+    default List<UserSummaryResponse> mapMentions(Set<Mention> mentions) {
+        if (mentions == null) return List.of();
+        return mentions.stream()
+                .map(m -> toUserSummaryResponse(m.getUser()))
+                .toList();
     }
 }

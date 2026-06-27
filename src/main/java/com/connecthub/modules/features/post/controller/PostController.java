@@ -3,19 +3,19 @@ package com.connecthub.modules.features.post.controller;
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
+import com.connecthub.modules.features.post.dto.request.UpdatePostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
-import com.connecthub.modules.features.post.dto.response.ReactionCountResponse;
-import com.connecthub.modules.features.post.dto.response.ReactionResponse;
 import com.connecthub.modules.features.post.enums.PostResponseCode;
-import com.connecthub.modules.features.post.enums.ReactionType;
+import com.connecthub.modules.features.post.enums.Visibility;
 import com.connecthub.modules.features.post.service.BookmarkService;
 import com.connecthub.modules.features.post.service.PostService;
-import com.connecthub.modules.features.post.service.ReactionService;
 import com.connecthub.modules.features.post.service.RepostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,14 +26,28 @@ import java.util.UUID;
 public class PostController {
 
     private final PostService postService;
-    private final ReactionService reactionService;
-    private final BookmarkService bookmarkService;
-    private final RepostService repostService;
-
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping
-    public ApiResponse<PostResponse> createPost(@Valid @RequestBody PostRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<PostResponse> createPost(
+            @RequestParam(required = false) String content,
+            @RequestParam(required = false, defaultValue = "PUBLIC") Visibility visibility,
+            @RequestParam(required = false) UUID parentPostId,
+            @RequestParam(required = false) UUID quotePostId,
+            @RequestParam(required = false) List<String> hashtags,
+            @RequestParam(required = false) List<String> mentionUsernames,
+            @RequestParam(required = false) List<MultipartFile> files) {
+
+        PostRequest request = PostRequest.builder()
+                .content(content)
+                .visibility(visibility)
+                .parentPostId(parentPostId)
+                .quotePostId(quotePostId)
+                .hashtags(hashtags)
+                .mentionUsernames(mentionUsernames)
+                .files(files)
+                .build();
+
         return ApiResponse.<PostResponse>builder()
                 .code(PostResponseCode.CREATE_POST_SUCCESS.getCode())
                 .message(PostResponseCode.CREATE_POST_SUCCESS.getMessage())
@@ -50,9 +64,9 @@ public class PostController {
                 .build();
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ApiResponse<PostResponse> updatePost(@PathVariable UUID id,
-                                                @Valid @RequestBody PostRequest request) {
+                                                @Valid @RequestBody UpdatePostRequest request) {
         return ApiResponse.<PostResponse>builder()
                 .code(PostResponseCode.UPDATE_POST_SUCCESS.getCode())
                 .message(PostResponseCode.UPDATE_POST_SUCCESS.getMessage())
@@ -68,7 +82,6 @@ public class PostController {
                 .message(PostResponseCode.DELETE_POST_SUCCESS.getMessage())
                 .build();
     }
-
 
     @GetMapping("/feed")
     public ApiResponse<CursorResponse<PostResponse>> getUserFeed(
@@ -93,7 +106,6 @@ public class PostController {
                 .build();
     }
 
-
     @PostMapping("/{id}/hashtags")
     public ApiResponse<Void> addHashtagToPost(@PathVariable UUID id,
                                               @RequestParam String hashtag) {
@@ -105,9 +117,23 @@ public class PostController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/{id}/replies")
-    public ApiResponse<PostResponse> createReply(@PathVariable UUID id,
-                                                 @Valid @RequestBody PostRequest request) {
+    @PostMapping(value = "/{id}/replies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<PostResponse> createReply(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String content,
+            @RequestParam(required = false, defaultValue = "PUBLIC") Visibility visibility,
+            @RequestParam(required = false) List<String> hashtags,
+            @RequestParam(required = false) List<String> mentionUsernames,
+            @RequestParam(required = false) List<MultipartFile> files) {
+
+        PostRequest request = PostRequest.builder()
+                .content(content)
+                .visibility(visibility)
+                .hashtags(hashtags)
+                .mentionUsernames(mentionUsernames)
+                .files(files)
+                .build();
+
         return ApiResponse.<PostResponse>builder()
                 .code(PostResponseCode.CREATE_REPLY_SUCCESS.getCode())
                 .message(PostResponseCode.CREATE_REPLY_SUCCESS.getMessage())
@@ -124,76 +150,6 @@ public class PostController {
                 .code(PostResponseCode.GET_REPLIES_SUCCESS.getCode())
                 .message(PostResponseCode.GET_REPLIES_SUCCESS.getMessage())
                 .data(postService.getReplies(id, cursor, limit))
-                .build();
-    }
-
-    // Toggle like/unlike — gọi 2 lần để bỏ like
-    @PostMapping("/{id}/reactions")
-    public ApiResponse<Boolean> toggleReaction(
-            @PathVariable UUID id,
-            @RequestParam(defaultValue = "LIKE") ReactionType type) {
-        boolean reacted = reactionService.toggleReaction(id, type);
-        return ApiResponse.<Boolean>builder()
-                .code(PostResponseCode.REACTION_SUCCESS.getCode())
-                .message(reacted ? "Reacted successfully" : "Reaction removed")
-                .data(reacted)
-                .build();
-    }
-
-    // Toggle bookmark/unbookmark — gọi 2 lần để bỏ bookmark
-    @PostMapping("/{id}/bookmarks")
-    public ApiResponse<Boolean> toggleBookmark(@PathVariable UUID id) {
-        boolean bookmarked = bookmarkService.toggleBookmark(id);
-        return ApiResponse.<Boolean>builder()
-                .code(PostResponseCode.BOOKMARK_SUCCESS.getCode())
-                .message(bookmarked ? "Bookmarked successfully" : "Bookmark removed")
-                .data(bookmarked)
-                .build();
-    }
-
-    // GET /v1/posts/bookmarks?cursor=xxx&limit=20 - get bookmarked posts của user hiện tại
-    @GetMapping("/bookmarks")
-    public ApiResponse<CursorResponse<PostResponse>> getBookmarkedPosts(
-            @RequestParam(required = false) UUID cursor,
-            @RequestParam(defaultValue = "20") int limit) {
-        return ApiResponse.<CursorResponse<PostResponse>>builder()
-                .code(PostResponseCode.GET_BOOKMARKS_SUCCESS.getCode())
-                .message(PostResponseCode.GET_BOOKMARKS_SUCCESS.getMessage())
-                .data(bookmarkService.getBookmarkedPosts(cursor, limit))
-                .build();
-    }
-    // Toggle repost/unrepost — gọi 2 lần để bỏ repost
-    @PostMapping("/{id}/reposts")
-    public ApiResponse<Boolean> toggleRepost(@PathVariable UUID id) {
-        boolean reposted = repostService.toggleRepost(id);
-        return ApiResponse.<Boolean>builder()
-                .code(PostResponseCode.REPOST_SUCCESS.getCode())
-                .message(reposted ? "Reposted successfully" : "Repost removed")
-                .data(reposted)
-                .build();
-    }
-    // GET /v1/posts/{id}/reactions?cursor=xxx&limit=20
-    // Lấy danh sách người đã react bài đăng (cursor-based pagination)
-    @GetMapping("/{id}/reactions")
-    public ApiResponse<CursorResponse<ReactionResponse>> getReactions(
-            @PathVariable UUID id,
-            @RequestParam(required = false) UUID cursor,
-            @RequestParam(defaultValue = "20") int limit) {
-        return ApiResponse.<CursorResponse<ReactionResponse>>builder()
-                .code(PostResponseCode.REACTION_SUCCESS.getCode())
-                .message("Reactions retrieved successfully")
-                .data(reactionService.getReactionsByPost(id, cursor, limit))
-                .build();
-    }
-
-    // GET /v1/posts/{id}/reactions/count
-    // Đếm số lượng react theo từng loại (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
-    @GetMapping("/{id}/reactions/count")
-    public ApiResponse<List<ReactionCountResponse>> countReactions(@PathVariable UUID id) {
-        return ApiResponse.<List<ReactionCountResponse>>builder()
-                .code(PostResponseCode.REACTION_SUCCESS.getCode())
-                .message("Reaction counts retrieved successfully")
-                .data(reactionService.countReactionsByType(id))
                 .build();
     }
 }
