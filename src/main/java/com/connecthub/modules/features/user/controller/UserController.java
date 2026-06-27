@@ -42,6 +42,18 @@ public class UserController {
     private final UserService userService;
 
     // ADMIN ONLY
+    @GetMapping("/allUsers")
+    public ApiResponse<CursorResponse<UserSummaryResponse>> getAllUsers(
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+    ) {
+        return ApiResponse.<CursorResponse<UserSummaryResponse>>builder()
+                .code(UserResponseCode.GET_ALL_USERS_SUCCESS.getCode())
+                .message(UserResponseCode.GET_ALL_USERS_SUCCESS.getMessage())
+                .data(userService.getAllUsers(cursor, size))
+                .build();
+    }
+    // ADMIN ONLY
     @GetMapping("/{id}")
     public ApiResponse<UserResponse> getUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()

@@ -54,6 +54,14 @@ public class UserService {
     private final NotificationService notificationService;
     private final UserBlockRepository userBlockRepository;
 
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Transactional(readOnly = true)
+    public CursorResponse<UserSummaryResponse> getAllUsers(UUID cursor, int size) {
+        List<User> users = userRepository.findAllUsers(cursor, Limit.of(size + 1));
+        return AppUtil.buildCursorResponse(users, size, User::getId, userMapper::toUserSummaryResponse);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void lockUser(String username) {
         User user = userRepository.findByUsername(username)

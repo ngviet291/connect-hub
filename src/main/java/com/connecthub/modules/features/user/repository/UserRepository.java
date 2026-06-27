@@ -2,6 +2,7 @@ package com.connecthub.modules.features.user.repository;
 
 import com.connecthub.modules.features.user.dto.response.FollowStatsResponse;
 import com.connecthub.modules.features.user.entity.User;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,4 +42,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                 GROUP BY u.id
             """)
     FollowStatsResponse countFollowStats(UUID userId);
+
+    @Query("SELECT u FROM User u WHERE :cursor IS NULL OR u.id < :cursor ORDER BY u.id DESC ")
+    List<User> findAllUsers(@Param("cursor") UUID cursor, Limit limit);
 }
