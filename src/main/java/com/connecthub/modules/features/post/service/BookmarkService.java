@@ -20,7 +20,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 @Service
@@ -46,7 +45,6 @@ public class BookmarkService {
                     return false;
                 })
                 .orElseGet(() -> {
-                    // Chỉ load khi thực sự cần tạo bookmark mới
                     if (!postRepository.existsById(postId)) throw new PostNotFoundException();
                     User user = userRepository.getReferenceById(userId);
                     Post post = postRepository.getReferenceById(postId);
@@ -67,9 +65,8 @@ public class BookmarkService {
     public CursorResponse<PostResponse> getBookmarkedPosts(UUID cursor, int size) {
         UUID userId = AppUtil.userIdFromAuthentication();
 
-        List<Bookmark> bookmarks = new ArrayList<>(
-                bookmarkRepository.findByUserIdWithDetails(userId, cursor, Limit.of(size + 1))
-        );
+        List<Bookmark> bookmarks = bookmarkRepository
+                .findByUserIdWithDetails(userId, cursor, Limit.of(size + 1));
 
         return AppUtil.buildCursorResponse(
                 bookmarks,

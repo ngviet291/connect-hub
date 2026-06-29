@@ -15,14 +15,6 @@ import java.util.UUID;
 @Repository
 public interface PostHashtagRepository extends JpaRepository<PostHashtag, PostHashtag.PostHashtagId> {
 
-    @Query("""
-            SELECT COUNT(ph) > 0
-            FROM PostHashtag ph
-            WHERE ph.post.id = :postId
-            AND ph.hashtag.id = :hashtagId
-        """)
-
-    boolean existsByPostIdAndHashtagId(@Param("postId") UUID postId, @Param("hashtagId") UUID hashtagId);
     @Query("SELECT ph.hashtag.id FROM PostHashtag ph WHERE ph.post.id = :postId")
     Set<UUID> findHashtagIdsByPostId(@Param("postId") UUID postId);
 
