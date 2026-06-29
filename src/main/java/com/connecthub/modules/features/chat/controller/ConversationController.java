@@ -8,6 +8,7 @@ import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResp
 import com.connecthub.modules.features.chat.enums.ChatResponseCode;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
 import com.connecthub.modules.features.chat.service.ConversationService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class ConversationController {
     private final ConversationService conversationService;
 
     @PatchMapping("/accept")
-    public ApiResponse<Void> acceptConversationRequest(@RequestBody AcceptConversationRequest request) {
+    public ApiResponse<Void> acceptConversationRequest(@RequestBody @Valid AcceptConversationRequest request) {
         conversationService.acceptConversationMember(request);
         return ApiResponse.<Void>builder()
                 .code(ChatResponseCode.ACCEPT_CONVERSATION_REQUEST_SUCCESS.getCode())
@@ -56,7 +57,7 @@ public class ConversationController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/group")
-    public ApiResponse<ConversationSummaryResponse> createPublicConversation(@RequestBody CreateGroupConversationRequest request) {
+    public ApiResponse<ConversationSummaryResponse> createPublicConversation(@RequestBody @Valid CreateGroupConversationRequest request) {
         return ApiResponse.<ConversationSummaryResponse>builder()
                 .code(ChatResponseCode.CREATE_CONVERSATION_SUCCESS.getCode())
                 .message(ChatResponseCode.CREATE_CONVERSATION_SUCCESS.getMessage())
@@ -75,7 +76,7 @@ public class ConversationController {
     }
 
     @PatchMapping("/{conversationId}")
-    public ApiResponse<ConversationSummaryResponse> updateConversation(@PathVariable UUID conversationId, @ModelAttribute UpdateConversationRequest request) {
+    public ApiResponse<ConversationSummaryResponse> updateConversation(@PathVariable UUID conversationId, @Valid @ModelAttribute UpdateConversationRequest request) {
         return ApiResponse.<ConversationSummaryResponse>builder()
                 .code(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getCode())
                 .message(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getMessage())
@@ -84,7 +85,7 @@ public class ConversationController {
     }
 
     @PostMapping("/{conversationId}/members")
-    public ApiResponse<ConversationDetailResponse> addMembers(@PathVariable UUID conversationId, @RequestBody AddMembersRequest request) {
+    public ApiResponse<ConversationDetailResponse> addMembers(@PathVariable UUID conversationId, @Valid @RequestBody AddMembersRequest request) {
         return ApiResponse.<ConversationDetailResponse>builder()
                 .code(ChatResponseCode.ADD_MEMBER_SUCCESS.getCode())
                 .message(ChatResponseCode.ADD_MEMBER_SUCCESS.getMessage())
@@ -96,7 +97,7 @@ public class ConversationController {
     public ApiResponse<ConversationDetailResponse> updateMemberRole(
             @PathVariable UUID conversationId,
             @PathVariable UUID memberId,
-            @RequestBody UpdateMemberRoleRequest request) {
+            @Valid @RequestBody UpdateMemberRoleRequest request) {
         return ApiResponse.<ConversationDetailResponse>builder()
                 .code(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getCode())
                 .message(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getMessage())

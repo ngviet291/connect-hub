@@ -60,7 +60,7 @@ public class ReportController {
     }
 
     @PatchMapping("/{reportId}/status")
-    public ApiResponse<UpdateStatusResponse> updateReportStatus(@PathVariable UUID reportId, @RequestBody UpdateReportStatusRequest updateReportStatusRequest) {
+    public ApiResponse<UpdateStatusResponse> updateReportStatus(@PathVariable UUID reportId, @Valid @RequestBody UpdateReportStatusRequest updateReportStatusRequest) {
         return ApiResponse.<UpdateStatusResponse>builder()
                 .code(ReportResponseCode.UPDATE_STATUS.getCode())
                 .message(ReportResponseCode.UPDATE_STATUS.getMessage())

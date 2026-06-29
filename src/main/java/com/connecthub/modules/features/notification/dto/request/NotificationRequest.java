@@ -23,6 +23,14 @@ import java.util.UUID;
         The recipient is the user who will receive the notification,
          and the actor is the user who triggered the notification.
         """)
+
+/**
+ *  Chỉ có service được tạo ra  notification, không có user nào được tạo ra notification
+ *  Notification được tạo ra khi có một hành động nào đó xảy ra, ví dụ:
+ *  - User A like post của User B => Notification được tạo ra cho User B với  actor là User A, type là LIKE, postId là ID của post
+ *  - User A comment post của User B => Notification được tạo ra cho User B với actor là User A, type là COMMENT, postId là ID của post
+ *  - User A follow User B => Notification được tạo ra cho User B với actor là User A, type là FOLLOW, postId là null
+ */
 public class NotificationRequest {
     @Schema(description = "The recipient of the notification. This is the user who will receive the notification.")
     private UUID recipient;

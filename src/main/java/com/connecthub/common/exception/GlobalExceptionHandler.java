@@ -5,12 +5,13 @@ import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.common.util.MessageUtil;
 import com.connecthub.modules.features.user.exception.AccountLockedException;
-import com.connecthub.modules.features.user.exception.DuplicateEmailException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,32 +22,30 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
     private final MessageUtil messageUtil;
-
-    public GlobalExceptionHandler(MessageUtil messageUtil) {
-        this.messageUtil = messageUtil;
-    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
 
         ErrorResponse response = ErrorResponse.builder()
                 .status(ErrorCode.UNCATEGORIZED_EXCEPTION.getStatusCode().value())
-                .message(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage())
+                .message(messageUtil.get(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage()))
                 .timestamp(LocalDateTime.now())
                 .error(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
 
-        ex.printStackTrace(); // Log the stack trace for debugging purposes
+        log.error("Uncaught exception at [{}]", request.getRequestURI(), ex);
 
         return ResponseEntity
                 .status(ErrorCode.UNCATEGORIZED_EXCEPTION.getStatusCode()).body(response);
@@ -59,7 +58,7 @@ public class GlobalExceptionHandler {
     ) {
         Map<String, String> errors = new HashMap<>();
 
-        // Field-level errors
+        // Field-level errors (đã i18n qua MessageSource gắn vào LocalValidatorFactoryBean, nếu đã config)
         ex.getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
@@ -68,12 +67,12 @@ public class GlobalExceptionHandler {
                                 error.getDefaultMessage()
                         ));
 
-        // Class-level (object) errors - đây là phần bạn đang thiếu
+        // Class-level (object) errors
         ex.getBindingResult()
                 .getGlobalErrors()
                 .forEach(error ->
                         errors.put(
-                                error.getObjectName(), // hoặc dùng key cố định như "request"
+                                error.getObjectName(),
                                 error.getDefaultMessage()
                         ));
 
@@ -81,7 +80,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed",
+                messageUtil.get(ErrorCode.VALIDATION_FAILED.getMessage()),
                 request.getRequestURI(),
                 errors
         );
@@ -89,14 +88,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException ex, HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.builder()
                 .status(ex.getErrorCode().getStatusCode().value())
-                .message(HttpStatus.valueOf(ex.getErrorCode().getStatusCode().value()).getReasonPhrase())
+                .message(messageUtil.get(ex.getErrorCode().getMessage()))
+                .error(HttpStatus.valueOf(ex.getErrorCode().getStatusCode().value()).getReasonPhrase())
                 .timestamp(LocalDateTime.now())
-                .error(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
 
@@ -106,13 +104,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
-        e.printStackTrace();
         return ResponseEntity.status(ErrorCode.FORBIDDEN.getStatusCode())
                 .body(ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
                         .status(ErrorCode.FORBIDDEN.getStatusCode().value())
                         .error(HttpStatus.valueOf(ErrorCode.FORBIDDEN.getStatusCode().value()).getReasonPhrase())
-                        .message(ErrorCode.FORBIDDEN.getMessage())
+                        .message(messageUtil.get(ErrorCode.FORBIDDEN.getMessage()))
                         .path(request.getRequestURI())
                         .build());
     }
@@ -135,7 +132,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.INVALID_PARAMETER_TYPE;
-        String message = e.getMessage();
 
 
         Class<?> errorTypeClass = e.getRequiredType();
@@ -156,8 +152,14 @@ public class GlobalExceptionHandler {
             errorCode = ErrorCode.INVALID_NUMBER_FORMAT;
         }
 
+        String message = messageUtil.get(errorCode.getMessage());
         if (e.getValue() != null) {
-            message = String.format("Invalid value '%s' for parameter '%s' must be a %s", e.getValue(), e.getName(), errorTypeClass.getSimpleName());
+            Map<String, Object> params = Map.of(
+                    "value", e.getValue(),
+                    "parameter", e.getName(),
+                    "type", errorTypeClass.getSimpleName()
+            );
+            message = mapAttributes(message, params);
         }
 
         ErrorResponse response = ErrorResponse.builder()
@@ -169,7 +171,6 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(errorCode.getStatusCode()).body(response);
-
     }
 
     @ExceptionHandler(ParameterizedException.class)
@@ -213,16 +214,58 @@ public class GlobalExceptionHandler {
                 Duration.between(now, ex.getLockedUntil()).getSeconds(), 0
         );
 
+        String message = mapAttribute(
+                messageUtil.get(ex.getErrorCode().getMessage()),
+                "remainingSeconds",
+                String.valueOf(remainingSeconds)
+        );
+
         AccountLockedErrorResponse error = AccountLockedErrorResponse.builder()
                 .timestamp(now)
                 .status(HttpStatus.FORBIDDEN.value())
-                .error("ACCOUNT_LOCKED")
-                .message(ex.getMessage())
+                .error(ex.getErrorCode().toString())
+                .message(message)
                 .path(request.getRequestURI())
                 .lockedUntil(ex.getLockedUntil())
                 .remainingSeconds(remainingSeconds)
                 .build();
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex, HttpServletRequest request) {
+
+        Throwable cause = ex.getCause();
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+        String message;
+
+        if (cause instanceof InvalidFormatException ife && ife.getTargetType() != null && ife.getTargetType().isEnum()) {
+            String fieldName = ife.getPath().isEmpty()
+                    ? "field"
+                    : ife.getPath().get(ife.getPath().size() - 1).getFieldName();
+
+            Object[] acceptedValues = ife.getTargetType().getEnumConstants();
+            String accepted = Arrays.stream(acceptedValues)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "));
+
+            message = mapAttributes(
+                    messageUtil.get("error.invalid_enum_value"),
+                    Map.of("field", fieldName, "value", ife.getValue(), "accepted", accepted)
+            );
+        } else {
+            message = messageUtil.get(errorCode.getMessage());
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(errorCode.getStatusCode().value())
+                .error(HttpStatus.valueOf(errorCode.getStatusCode().value()).getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(errorCode.getStatusCode()).body(response);
     }
 }

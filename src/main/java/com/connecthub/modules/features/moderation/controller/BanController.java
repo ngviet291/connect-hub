@@ -42,7 +42,7 @@ public class BanController {
     }
 
     @PatchMapping("/{banId}/unban")
-    public ApiResponse<BanResponse> unbanUser(@PathVariable UUID banId, @RequestBody UnbanRequest request) {
+    public ApiResponse<BanResponse> unbanUser(@PathVariable UUID banId, @Valid @RequestBody UnbanRequest request) {
         return ApiResponse.<BanResponse>builder()
                 .code(BanResponseCode.UNBAN_SUCCESS.getCode())
                 .message(BanResponseCode.UNBAN_SUCCESS.getMessage())

@@ -28,6 +28,10 @@ public enum ChatErrorCode implements BaseErrorCode {
     private final String message;
     private final HttpStatus statusCode;
 
+    @Override
+    public String toString() {
+        return name();
+    }
     ChatErrorCode(String message, HttpStatus statusCode) {
         this.message = message;
         this.statusCode = statusCode;

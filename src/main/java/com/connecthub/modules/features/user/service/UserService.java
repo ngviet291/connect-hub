@@ -183,10 +183,8 @@ public class UserService {
         User currentUser = getUserByIdOrThrow(currentUserId);
 
         // validate phone uniqueness if provided
-        if (request.getPhoneNumber() != null) {
-            if (userRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), currentUserId)) {
-                throw new DuplicatePhoneNumberException("phone", request.getPhoneNumber());
-            }
+        if (userRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), currentUserId)) {
+            throw new DuplicatePhoneNumberException("phone", request.getPhoneNumber());
         }
 
         // map values from request into existing entity using MapStruct

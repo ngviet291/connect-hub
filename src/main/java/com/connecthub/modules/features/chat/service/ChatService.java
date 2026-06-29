@@ -1,6 +1,5 @@
 package com.connecthub.modules.features.chat.service;
 
-import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.service.WebSocketService;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
@@ -57,7 +56,6 @@ public class ChatService {
     @Transactional
     @PreAuthorize("hasRole('USER')")
     public MessageResponse sendMessage(SendMessageRequest request) {
-        validateContentPresent(request);
         UUID senderId = AppUtil.userIdFormAuthentication();
 
         if (request.getConversationId() != null) {
@@ -128,13 +126,6 @@ public class ChatService {
 
     // ── helpers ──────────────────────────────────────────────────────────
 
-    private void validateContentPresent(SendMessageRequest request) {
-        boolean noContent = request.getContent() == null;
-        boolean noMedia = request.getMedia() == null || request.getMedia().isEmpty();
-        if (noContent && noMedia) {
-            throw new InvalidChatRequestException();
-        }
-    }
 
     private void validateNotBlocked(UUID senderId, UUID recipientId) {
         if (userBlockService.isBlockedBy(senderId, recipientId)) {

@@ -1,6 +1,8 @@
 package com.connecthub.modules.features.user.dto.request;
 
 
+import com.connecthub.modules.features.user.validation.annotation.ValidPassword;
+import com.connecthub.modules.features.user.validation.annotation.ValidUsername;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,9 +16,13 @@ import lombok.NoArgsConstructor;
 @Schema(description = "User creation request")
 public class UserCreateRequest {
     @Schema(description = "Unique username for the user", example = "johndoe")
+    @ValidUsername
     private String username;
+
     @Schema(description = "Password for the user account", example = "Test12345@")
+    @ValidPassword
     private String password;
+
     @Schema(description = "Email address for the user", example = "john.doe@example.com")
     private String email;
     @Schema(description = "Full name of the user", example = "John Doe")

@@ -1,6 +1,7 @@
 package com.connecthub.common.exception;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
@@ -37,13 +38,27 @@ public enum ErrorCode implements BaseErrorCode {
     FILE_NOT_FOUND("error.file_not_found", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED("error.file_size_exceeded", HttpStatus.BAD_REQUEST),
     INVALID_FILE_TYPE("error.invalid_file_type", HttpStatus.BAD_REQUEST),
-    USER_NOT_BLOCKED("error.user_not_blocked", HttpStatus.BAD_REQUEST);
+    USER_NOT_BLOCKED("error.user_not_blocked", HttpStatus.BAD_REQUEST),
+    VALIDATION_FAILED("error.validation_failed", HttpStatus.BAD_REQUEST),
+    INVALID_UUID("error.invalid_uuid", HttpStatus.BAD_REQUEST),
+
+
+
+
+    ;
+
 
     private final String message;
     private final HttpStatusCode statusCode;
+
+
+    @Override
+    public String toString() {
+        return name();
+    }
 
     ErrorCode(String message, HttpStatusCode statusCode) {
         this.message = message;
         this.statusCode = statusCode;
     }
-}
+    }

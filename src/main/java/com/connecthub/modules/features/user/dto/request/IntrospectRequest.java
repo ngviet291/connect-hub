@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class IntrospectRequest {
 
     @Schema(description = "The access token to introspect", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-    @NotBlank(message = "Access token is required")
+    @NotBlank(message = "error.accesstoken.required")
     private String accessToken;
 }

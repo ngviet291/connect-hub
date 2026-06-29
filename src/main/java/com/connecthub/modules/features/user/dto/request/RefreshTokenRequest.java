@@ -11,6 +11,7 @@ import lombok.*;
 @Schema(description = "Request object for refreshing access token using refresh token")
 public class RefreshTokenRequest {
     @Schema(description = "The refresh token to use for obtaining a new access token", example = "d4519dac-ae2c-46d3-a432-ede6af745ef4")
-    @NotBlank(message = "INVALID_REFRESH_TOKEN")
+
+    @NotBlank(message = "error.refreshtoken.required")
     private String refreshToken;
 }

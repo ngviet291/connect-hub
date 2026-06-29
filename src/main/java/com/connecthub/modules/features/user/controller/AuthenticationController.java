@@ -55,7 +55,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh-token")
-    public ApiResponse<AuthenticateResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+    public ApiResponse<AuthenticateResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         AuthenticateResponse response = authenticationService.refreshToken(request);
         return ApiResponse.<AuthenticateResponse>builder()
                 .code(AuthResponseCode.TOKEN_REFRESH_SUCCESS.getCode())
@@ -65,7 +65,7 @@ public class AuthenticationController {
     }
 
     @PutMapping("/change-password")
-    public ApiResponse<UserChangePasswordResponse> changePassword(@RequestBody UserChangePasswordRequest request) {
+    public ApiResponse<UserChangePasswordResponse> changePassword(@Valid @RequestBody UserChangePasswordRequest request) {
         UserChangePasswordResponse response = authenticationService.changePassword(request);
         return ApiResponse.<UserChangePasswordResponse>builder()
                 .code(AuthResponseCode.PASSWORD_CHANGE_SUCCESS.getCode())
@@ -75,7 +75,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(@RequestBody LogoutRequest request) {
+    public ApiResponse<Void> logout(@Valid @RequestBody LogoutRequest request) {
         authenticationService.logout(request);
         return ApiResponse.<Void>builder()
                 .code(AuthResponseCode.LOGOUT_SUCCESS.getCode())

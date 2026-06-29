@@ -23,4 +23,8 @@ public enum ModerationErrorCode implements BaseErrorCode {
         this.message = message;
         this.statusCode = statusCode;
     }
+    @Override
+    public String toString() {
+        return name();
+    }
 }
