@@ -5,10 +5,8 @@ import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.post.dto.response.MentionResponse;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
 import com.connecthub.modules.features.post.entity.Mention;
-import com.connecthub.modules.features.post.exception.PostNotFoundException;
 import com.connecthub.modules.features.post.mapper.PostMapper;
 import com.connecthub.modules.features.post.repository.MentionRepository;
-import com.connecthub.modules.features.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,46 +21,41 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MentionService {
 
-    private final MentionRepository mentionRepository;
-    private final PostRepository postRepository;
-    private final PostMapper postMapper;
+        private final MentionRepository mentionRepository;
+        private final PostMapper postMapper;
 
-    //GET /posts/{id}/mentions
-     //Trả về danh sách user được mention trong bài đăng
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<MentionResponse> getMentionsByPost(UUID postId, UUID cursor, int size) {
-        List<Mention> mentions = new ArrayList<>(
-                mentionRepository.findByPostId(postId, cursor, Limit.of(size + 1))
-        );
+        // GET /posts/{id}/mentions
+        // Trả về danh sách user được mention trong bài đăng
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<MentionResponse> getMentionsByPost(UUID postId, UUID cursor, int size) {
+                List<Mention> mentions = new ArrayList<>(
+                                mentionRepository.findByPostId(postId, cursor, Limit.of(size + 1)));
 
-        return AppUtil.buildCursorResponse(
-                mentions, size,
-                Mention::getId,
-                m -> MentionResponse.builder()
-                        .id(m.getId())
-                        .user(postMapper.toUserSummaryResponse(m.getUser()))
-                        .createdAt(m.getCreatedAt())
-                        .build()
-        );
-    }
+                return AppUtil.buildCursorResponse(
+                                mentions, size,
+                                Mention::getId,
+                                m -> MentionResponse.builder()
+                                                .id(m.getId())
+                                                .user(postMapper.toUserSummaryResponse(m.getUser()))
+                                                .createdAt(m.getCreatedAt())
+                                                .build());
+        }
 
-    //GET /users/me/mentions
-     //Trả về danh sách bài đăng đang mention user hiện tại
+        // GET /users/me/mentions
+        // Trả về danh sách bài đăng đang mention user hiện tại
 
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<PostResponse> getMyMentions(UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFromAuthentication();
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<PostResponse> getMyMentions(UUID cursor, int size) {
+                UUID currentUserId = AppUtil.userIdFromAuthentication();
 
-        List<Mention> mentions = new ArrayList<>(
-                mentionRepository.findByUserId(currentUserId, cursor, Limit.of(size + 1))
-        );
+                List<Mention> mentions = new ArrayList<>(
+                                mentionRepository.findByUserId(currentUserId, cursor, Limit.of(size + 1)));
 
-        return AppUtil.buildCursorResponse(
-                mentions, size,
-                Mention::getId,
-                m -> postMapper.mapToResponse(m.getPost())
-        );
-    }
+                return AppUtil.buildCursorResponse(
+                                mentions, size,
+                                Mention::getId,
+                                m -> postMapper.mapToResponse(m.getPost()));
+        }
 }

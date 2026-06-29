@@ -15,7 +15,6 @@ import com.connecthub.modules.features.post.repository.*;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Limit;
@@ -77,8 +76,7 @@ public class PostService {
     public PostResponse getPost(UUID postId) {
         return postMapper.mapToResponse(
                 postRepository.findByIdWithDetails(postId)
-                        .orElseThrow(PostNotFoundException::new)
-        );
+                        .orElseThrow(PostNotFoundException::new));
     }
 
     @Transactional
@@ -88,8 +86,10 @@ public class PostService {
         Post post = postRepository.findByIdAndUserIdWithDetails(postId, userId)
                 .orElseThrow(PostAccessDeniedException::new);
 
-        if (request.getContent() != null) post.setContent(request.getContent());
-        if (request.getVisibility() != null) post.setVisibility(request.getVisibility());
+        if (request.getContent() != null)
+            post.setContent(request.getContent());
+        if (request.getVisibility() != null)
+            post.setVisibility(request.getVisibility());
 
         if (request.getHashtags() != null) {
             postHashtagRepository.deleteByPostId(post.getId());
@@ -116,7 +116,8 @@ public class PostService {
         Post post = postRepository.findByIdAndUserId(postId, userId)
                 .orElseThrow(PostAccessDeniedException::new);
 
-        if (post.isDeleted()) throw new PostNotFoundException();
+        if (post.isDeleted())
+            throw new PostNotFoundException();
 
         post.setDeleted(true);
         postRepository.save(post);
@@ -130,55 +131,57 @@ public class PostService {
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getUserFeed(UUID cursor, int size) {
         List<UUID> ids = postRepository.findPublicFeedIds(cursor, Limit.of(size + 1));
-        boolean hasNext = ids.size() > size;
-        List<UUID> pageIds = hasNext ? ids.subList(0, size) : ids;
 
-        if (pageIds.isEmpty()) return emptyCursor();
+        // Nếu bảng tin trống, trả về kết quả rỗng luôn, đỡ tốn 1 lần gọi DB phía dưới
+        if (ids.isEmpty()) {
+            return AppUtil.buildCursorResponse(Collections.emptyList(), size, Post::getId, postMapper::mapToResponse);
+        }
 
-        // findAllWithDetailsByIds trả về unordered do DISTINCT, cần sort lại theo pageIds
-        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(pageIds)
-                .stream().collect(Collectors.toMap(Post::getId, p -> p));
+        // Lấy chi tiết các Post từ DB và đưa vào Map O(1)
+        // function (existing, replacement) -> existing để phòng lỗi trùng key
+        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
+                .stream()
+                .collect(Collectors.toMap(
+                        Post::getId,
+                        p -> p,
+                        (existing, replacement) -> existing));
 
-        List<PostResponse> content = pageIds.stream()
+        // Tái cấu trúc List Post đi theo đúng thứ tự chuẩn xác của mảng ids gốc
+        List<Post> posts = ids.stream()
                 .map(postMap::get)
                 .filter(Objects::nonNull)
-                .map(postMapper::mapToResponse)
-                .toList();
-
-        return CursorResponse.<PostResponse>builder()
-                .content(content)
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? pageIds.getLast().toString() : null)
-                .build();
+                .collect(Collectors.toList());
+        return AppUtil.buildCursorResponse(posts, size, Post::getId, postMapper::mapToResponse);
     }
 
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getPostsByHashtag(String hashtag, UUID cursor, int size) {
         String normalized = hashtag.toLowerCase();
-        Hashtag hashtagEntity = hashtagRepository.findByName(normalized)
+        UUID hashtagId = hashtagRepository.findIdByName(normalized)
                 .orElseThrow(() -> new HashtagNotFoundException(normalized));
-        List<UUID> ids = postHashtagRepository.findPostIdsByHashtagId(
-                hashtagEntity.getId(), cursor, Limit.of(size + 1));
+        List<UUID> ids = postHashtagRepository.findPostIdsByHashtagId(hashtagId, cursor, Limit.of(size + 1));
 
-        boolean hasNext = ids.size() > size;
-        List<UUID> pageIds = hasNext ? ids.subList(0, size) : ids;
+        // Nếu không có bài viết nào thì trả về kết quả rỗng luôn, né việc gọi SQL IN ()
+        // vô nghĩa
+        if (ids.isEmpty()) {
+            return AppUtil.buildCursorResponse(Collections.emptyList(), size, Post::getId, postMapper::mapToResponse);
+        }
 
-        if (pageIds.isEmpty()) return emptyCursor();
+        // Fetch chi tiết các Post và map vào cấu trúc Map O(1)
+        // function (existing, replacement) -> existing để phòng lỗi trùng key
+        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
+                .stream()
+                .collect(Collectors.toMap(
+                        Post::getId,
+                        p -> p,
+                        (existing, replacement) -> existing));
 
-        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(pageIds)
-                .stream().collect(Collectors.toMap(Post::getId, p -> p));
-
-        List<PostResponse> content = pageIds.stream()
+        // Tái cấu trúc List Post đi theo đúng thứ tự chuẩn xác của mảng ids gốc
+        List<Post> posts = ids.stream()
                 .map(postMap::get)
                 .filter(Objects::nonNull)
-                .map(postMapper::mapToResponse)
-                .toList();
-
-        return CursorResponse.<PostResponse>builder()
-                .content(content)
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? pageIds.getLast().toString() : null)
-                .build();
+                .collect(Collectors.toList());
+        return AppUtil.buildCursorResponse(posts, size, Post::getId, postMapper::mapToResponse);
     }
 
     @Transactional
@@ -194,27 +197,28 @@ public class PostService {
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getReplies(UUID postId, UUID cursor, int size) {
         getPostOrThrow(postId);
-
         List<UUID> ids = postRepository.findRepliesIds(postId, cursor, Limit.of(size + 1));
-        boolean hasNext = ids.size() > size;
-        List<UUID> pageIds = hasNext ? ids.subList(0, size) : ids;
 
-        if (pageIds.isEmpty()) return emptyCursor();
+        // nếu bài viết chưa có bình luận nào, trả về rỗng luôn để né lỗi SQL IN ()
+        if (ids.isEmpty()) {
+            return AppUtil.buildCursorResponse(Collections.emptyList(), size, Post::getId, postMapper::mapToResponse);
+        }
 
-        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(pageIds)
-                .stream().collect(Collectors.toMap(Post::getId, p -> p));
-
-        List<PostResponse> content = pageIds.stream()
+        // lấy dữ liệu chi tiết từ DB (thứ tự lộn xộn) và đưa vào Map O(1)
+        // function (existing, replacement) -> existing để phòng lỗi trùng key
+        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
+                .stream()
+                .collect(Collectors.toMap(
+                        Post::getId,
+                        p -> p,
+                        (existing, replacement) -> existing));
+        // duyệt theo mảng ids gốc để ép List Post đầu ra phải khớp 100% thứ tự chuẩn
+        // của Cursor
+        List<Post> posts = ids.stream()
                 .map(postMap::get)
                 .filter(Objects::nonNull)
-                .map(postMapper::mapToResponse)
-                .toList();
-
-        return CursorResponse.<PostResponse>builder()
-                .content(content)
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? pageIds.getLast().toString() : null)
-                .build();
+                .collect(Collectors.toList());
+        return AppUtil.buildCursorResponse(posts, size, Post::getId, postMapper::mapToResponse);
     }
 
     private List<PostHashtag> addHashtagsToPost(Post post, List<String> hashtags) {
@@ -230,7 +234,7 @@ public class PostService {
                 .map(n -> Hashtag.builder().id(AppUtil.generateUUID()).name(n).build())
                 .toList();
         if (!toCreate.isEmpty()) {
-            hashtagRepository.saveAll(toCreate)   // 1 batch INSERT
+            hashtagRepository.saveAll(toCreate) // 1 batch INSERT
                     .forEach(h -> existing.put(h.getName(), h));
         }
 
@@ -257,7 +261,8 @@ public class PostService {
 
         // Kiểm tra username nào không tồn tại
         normalized.forEach(u -> {
-            if (!userMap.containsKey(u)) throw new MentionedUserNotFoundException(u);
+            if (!userMap.containsKey(u))
+                throw new MentionedUserNotFoundException(u);
         });
 
         List<Mention> mentions = normalized.stream()
@@ -276,11 +281,11 @@ public class PostService {
     }
 
     private Post getPostOrThrow(UUID postId) {
-        return postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
-    }
-
-    private CursorResponse<PostResponse> emptyCursor() {
-        return CursorResponse.<PostResponse>builder()
-                .content(List.of()).hasNext(false).nextCursor(null).build();
+        Post post = postRepository.findById(postId)
+                .orElseThrow(PostNotFoundException::new);
+        if (post.isDeleted()) {
+            throw new PostNotFoundException();
+        }
+        return post;
     }
 }

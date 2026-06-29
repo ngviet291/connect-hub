@@ -9,7 +9,6 @@ import com.connecthub.modules.features.post.repository.RepostRepository;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +25,6 @@ public class RepostService {
     private final RepostRepository repostRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-
 
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")

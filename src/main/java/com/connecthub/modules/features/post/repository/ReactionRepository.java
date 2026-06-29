@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.post.repository;
 
+import com.connecthub.modules.features.post.dto.projection.ReactionTypeCountProjection;
 import com.connecthub.modules.features.post.entity.Reaction;
 import com.connecthub.modules.features.post.enums.ReactionType;
 import org.springframework.data.domain.Pageable;
@@ -37,9 +38,5 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
         WHERE r.post.id = :postId
         GROUP BY r.type
     """)
-    List<ReactionTypeCount> countByPostIdGroupByType(@Param("postId") UUID postId);
-    interface ReactionTypeCount {
-        ReactionType getType();
-        long getCount();
-    }
+    List<ReactionTypeCountProjection> countByPostIdGroupByType(@Param("postId") UUID postId);
 }

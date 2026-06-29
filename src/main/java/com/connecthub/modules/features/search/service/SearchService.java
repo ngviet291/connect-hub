@@ -2,7 +2,7 @@ package com.connecthub.modules.features.search.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
-import com.connecthub.modules.features.post.dto.response.HashtagPostCount;
+import com.connecthub.modules.features.post.dto.projection.HashtagPostCountProjection;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
 import com.connecthub.modules.features.post.entity.Hashtag;
 import com.connecthub.modules.features.post.entity.Post;
@@ -20,105 +20,122 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class SearchService {
 
-    private final UserRepository userRepository;
-    private final PostRepository postRepository;
-    private final HashtagRepository hashtagRepository;
-    private final PostMapper postMapper;
+        private final UserRepository userRepository;
+        private final PostRepository postRepository;
+        private final HashtagRepository hashtagRepository;
+        private final PostMapper postMapper;
 
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<UserSummaryResponse> searchUsers(String keyword, UUID cursor, int size) {
-        List<User> users = userRepository.searchByNameOrUsername(
-                keyword.trim(), cursor, Limit.of(size + 1));
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<UserSummaryResponse> searchUsers(String keyword, UUID cursor, int size) {
+                List<User> users = userRepository.searchByNameOrUsername(
+                                keyword.trim(), cursor, Limit.of(size + 1));
 
-        return AppUtil.buildCursorResponse(
-                users, size,
-                User::getId,
-                u -> UserSummaryResponse.builder()
-                        .id(u.getId())
-                        .username(u.getUsername())
-                        .fullName(u.getFullName())
-                        .avatarUrl(u.getAvatarUrl())
-                        .build()
-        );
-    }
+                return AppUtil.buildCursorResponse(
+                                users, size,
+                                User::getId,
+                                u -> UserSummaryResponse.builder()
+                                                .id(u.getId())
+                                                .username(u.getUsername())
+                                                .fullName(u.getFullName())
+                                                .avatarUrl(u.getAvatarUrl())
+                                                .build());
+        }
 
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<PostResponse> searchPosts(String keyword, UUID cursor, int size) {
-        List<UUID> ids = postRepository.searchIdsByKeyword(
-                keyword.trim(), cursor, Limit.of(size + 1));
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<PostResponse> searchPosts(
+                        String keyword,
+                        UUID cursor,
+                        int size) {
+                List<UUID> ids = postRepository.searchIdsByKeyword(
+                                keyword.trim(),
+                                cursor,
+                                Limit.of(size + 1));
 
-        boolean hasNext = ids.size() > size;
-        List<UUID> pageIds = hasNext ? ids.subList(0, size) : ids;
+                if (ids.isEmpty()) {
+                        return emptyCursor();
+                }
 
-        if (pageIds.isEmpty()) return emptyCursor();
+                Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
+                                .stream()
+                                .collect(Collectors.toMap(Post::getId, p -> p));
 
-        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(pageIds)
-                .stream().collect(Collectors.toMap(Post::getId, p -> p));
+                List<Post> posts = ids.stream()
+                                .map(postMap::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList());
 
-        List<PostResponse> content = pageIds.stream()
-                .map(postMap::get)
-                .filter(Objects::nonNull)
-                .map(postMapper::mapToResponse)
-                .toList();
+                return AppUtil.buildCursorResponse(
+                                posts,
+                                size,
+                                Post::getId,
+                                postMapper::mapToResponse);
+        }
 
-        return CursorResponse.<PostResponse>builder()
-                .content(content)
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? pageIds.getLast().toString() : null)
-                .build();
-    }
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<HashtagSearchResponse> searchHashtags(
+                        String keyword,
+                        UUID cursor,
+                        int size) {
+                List<Hashtag> hashtags = hashtagRepository.searchByName(
+                                keyword.trim(),
+                                cursor,
+                                Limit.of(size + 1));
 
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<HashtagSearchResponse> searchHashtags(String keyword, UUID cursor, int size) {
-        List<Hashtag> hashtags = hashtagRepository.searchByName(
-                keyword.trim(), cursor, Limit.of(size + 1));
+                if (hashtags.isEmpty()) {
+                        return emptyCursorHashtag();
+                }
 
-        boolean hasNext = hashtags.size() > size;
-        List<Hashtag> page = hasNext ? hashtags.subList(0, size) : hashtags;
+                List<UUID> ids = hashtags.stream()
+                                .map(Hashtag::getId)
+                                .toList();
 
-        if (page.isEmpty()) return emptyCursorHashtag();
+                Map<UUID, Long> countMap = hashtagRepository.countPostsByHashtagIds(ids)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                HashtagPostCountProjection::getHashtagId,
+                                                HashtagPostCountProjection::getPostCount));
 
-        List<UUID> ids = page.stream().map(Hashtag::getId).toList();
+                List<HashtagSearchResponse> content = hashtags.stream()
+                                .map(h -> HashtagSearchResponse.builder()
+                                                .id(h.getId())
+                                                .name(h.getName())
+                                                .postCount(
+                                                                countMap.getOrDefault(
+                                                                                h.getId(),
+                                                                                0L))
+                                                .createdAt(h.getCreatedAt())
+                                                .build())
+                                .collect(Collectors.toCollection(ArrayList::new));
 
-        // Dùng projection thay Object[] để tránh ClassCastException
-        Map<UUID, Long> countMap = hashtagRepository.countPostsByHashtagIds(ids)
-                .stream()
-                .collect(Collectors.toMap(
-                        HashtagPostCount::getHashtagId,
-                        HashtagPostCount::getPostCount
-                ));
+                return AppUtil.buildCursorResponse(
+                                content,
+                                size,
+                                HashtagSearchResponse::getId,
+                                // Function.identity() = x -> x
+                                // Dùng khi không cần map sang object khác.
+                                // Ở đây:
+                                // HashtagSearchResponse -> HashtagSearchResponse
+                                // nên chỉ trả về chính object đó.
+                                Function.identity());
+        }
 
-        List<HashtagSearchResponse> content = page.stream()
-                .map(h -> HashtagSearchResponse.builder()
-                        .id(h.getId())
-                        .name(h.getName())
-                        .postCount(countMap.getOrDefault(h.getId(), 0L))
-                        .createdAt(h.getCreatedAt())
-                        .build())
-                .toList();
+        private CursorResponse<PostResponse> emptyCursor() {
+                return CursorResponse.<PostResponse>builder()
+                                .content(List.of()).hasNext(false).nextCursor(null).build();
+        }
 
-        return CursorResponse.<HashtagSearchResponse>builder()
-                .content(content)
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? page.getLast().getId().toString() : null)
-                .build();
-    }
-
-    private CursorResponse<PostResponse> emptyCursor() {
-        return CursorResponse.<PostResponse>builder()
-                .content(List.of()).hasNext(false).nextCursor(null).build();
-    }
-
-    private CursorResponse<HashtagSearchResponse> emptyCursorHashtag() {
-        return CursorResponse.<HashtagSearchResponse>builder()
-                .content(List.of()).hasNext(false).nextCursor(null).build();
-    }
+        private CursorResponse<HashtagSearchResponse> emptyCursorHashtag() {
+                return CursorResponse.<HashtagSearchResponse>builder()
+                                .content(List.of()).hasNext(false).nextCursor(null).build();
+        }
 }

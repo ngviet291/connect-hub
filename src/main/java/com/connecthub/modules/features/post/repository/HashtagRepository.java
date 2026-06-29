@@ -1,10 +1,9 @@
 package com.connecthub.modules.features.post.repository;
 
-import com.connecthub.modules.features.post.dto.response.HashtagPostCount;
+import com.connecthub.modules.features.post.dto.projection.HashtagPostCountProjection;
 import com.connecthub.modules.features.post.entity.Hashtag;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,7 +16,8 @@ import java.util.UUID;
 @Repository
 public interface HashtagRepository extends JpaRepository<Hashtag, UUID> {
 
-    Optional<Hashtag> findByName(String name);
+    @Query("SELECT h.id FROM Hashtag h WHERE h.name = :name")
+    Optional<UUID> findIdByName(@Param("name") String name);
 
     // Search hashtag theo tên
     @Query("""
@@ -37,6 +37,6 @@ public interface HashtagRepository extends JpaRepository<Hashtag, UUID> {
     AND ph.post.isDeleted = false
     GROUP BY ph.hashtag.id
 """)
-    List<HashtagPostCount> countPostsByHashtagIds(@Param("ids") List<UUID> ids);
+    List<HashtagPostCountProjection> countPostsByHashtagIds(@Param("ids") List<UUID> ids);
 
 }

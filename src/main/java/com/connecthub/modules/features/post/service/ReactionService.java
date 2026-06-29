@@ -11,13 +11,10 @@ import com.connecthub.modules.features.post.exception.PostNotFoundException;
 import com.connecthub.modules.features.post.mapper.ReactionMapper;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.post.repository.ReactionRepository;
-import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
-import com.connecthub.modules.features.user.entity.User;
-import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -40,24 +37,44 @@ public class ReactionService {
     @PreAuthorize("hasRole('ROLE_USER')")
     public boolean toggleReaction(UUID postId, ReactionType type) {
         UUID userId = AppUtil.userIdFromAuthentication();
+        Post post = postRepository.findById(postId)
+                .filter(p -> !p.isDeleted())
+                .orElseThrow(PostNotFoundException::new);
 
         return reactionRepository.findByPostIdAndUserId(postId, userId)
                 .map(existing -> {
-                    reactionRepository.delete(existing);
-                    postRepository.decrementReactionCount(postId);
-                    log.info("User {} unreacted post {}", userId, postId);
-                    return false;
+                    // Bấm lại cùng reaction -> bỏ reaction
+                    if (existing.getType() == type) {
+                        reactionRepository.delete(existing);
+                        postRepository.decrementReactionCount(postId);
+                        log.info("User {} unreacted post {}", userId, postId);
+                        return false;
+                    }
+                    // Đổi loại reaction (LIKE -> LOVE)
+                    existing.setType(type);
+                    log.info("User {} changed reaction on post {} to {}", userId, postId, type);
+                    return true;
                 })
                 .orElseGet(() -> {
-                    reactionRepository.save(Reaction.builder()
-                            .id(AppUtil.generateUUID())
-                            .user(userRepository.findById(userId).orElseThrow(UserNotFoundException::new))
-                            .post(postRepository.findById(postId).orElseThrow(PostNotFoundException::new))
-                            .type(type)
-                            .build());
-                    postRepository.incrementReactionCount(postId);
-                    log.info("User {} reacted post {} with {}", userId, postId, type);
-                    return true;
+                    try {
+                        Reaction reaction = Reaction.builder()
+                                .id(AppUtil.generateUUID())
+                                .user(userRepository.getReferenceById(userId))
+                                .post(post)
+                                .type(type)
+                                .build();
+
+                        reactionRepository.save(reaction);
+                        postRepository.incrementReactionCount(postId);
+                        log.info("User {} reacted post {} with {}", userId, postId, type);
+                        return true;
+                    } catch (DataIntegrityViolationException ex) {
+                        // Xử lý có request khác vừa insert trước mình
+                        log.warn("Duplicate reaction prevented. userId={}, postId={}", userId, postId);
+
+                        // Đọc lại trạng thái hiện tại xem có tồn tại hay không
+                        return reactionRepository.findByPostIdAndUserId(postId, userId).isPresent();
+                    }
                 });
     }
 

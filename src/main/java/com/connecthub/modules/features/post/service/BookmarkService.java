@@ -10,9 +10,7 @@ import com.connecthub.modules.features.post.mapper.PostMapper;
 import com.connecthub.modules.features.post.repository.BookmarkRepository;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.user.entity.User;
-import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Limit;
@@ -22,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -45,7 +44,8 @@ public class BookmarkService {
                     return false;
                 })
                 .orElseGet(() -> {
-                    if (!postRepository.existsById(postId)) throw new PostNotFoundException();
+                    if (!postRepository.existsById(postId))
+                        throw new PostNotFoundException();
                     User user = userRepository.getReferenceById(userId);
                     Post post = postRepository.getReferenceById(postId);
 
@@ -72,7 +72,6 @@ public class BookmarkService {
                 bookmarks,
                 size,
                 Bookmark::getId,
-                b -> postMapper.mapToResponse(b.getPost())
-        );
+                b -> postMapper.mapToResponse(b.getPost()));
     }
 }

@@ -8,17 +8,13 @@ import com.connecthub.modules.features.post.entity.Media;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.post.enums.MediaType;
 import com.connecthub.modules.features.post.repository.MediaRepository;
-import com.connecthub.modules.features.user.exception.FileSizeExceededException;
-import com.connecthub.modules.features.user.exception.FileNotFoundException;
 import com.connecthub.modules.features.user.exception.InvalidFileTypeException;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,7 +35,8 @@ public class MediaService {
 
     private Media upload(MultipartFile file, Post post) {
         String contentType = file.getContentType();
-        if (contentType == null) throw new InvalidFileTypeException();
+        if (contentType == null)
+            throw new InvalidFileTypeException();
 
         MediaType mediaType = resolveMediaType(contentType);
 
@@ -47,8 +44,7 @@ public class MediaService {
             byte[] bytes = file.getBytes();
             UploadMediaResponse uploadResponse = (mediaType == MediaType.VIDEO
                     ? mediaStorageService.uploadVideo(bytes, POST_MEDIA_FOLDER)
-                    : mediaStorageService.uploadImage(bytes, POST_MEDIA_FOLDER)
-            ).get();
+                    : mediaStorageService.uploadImage(bytes, POST_MEDIA_FOLDER)).get();
 
             Media media = mediaRepository.save(Media.builder()
                     .id(AppUtil.generateUUID())
@@ -69,8 +65,10 @@ public class MediaService {
     }
 
     private MediaType resolveMediaType(String contentType) {
-        if (contentType.startsWith("image/")) return MediaType.IMAGE;
-        if (contentType.startsWith("video/")) return MediaType.VIDEO;
+        if (contentType.startsWith("image/"))
+            return MediaType.IMAGE;
+        if (contentType.startsWith("video/"))
+            return MediaType.VIDEO;
         throw new InvalidFileTypeException();
     }
 

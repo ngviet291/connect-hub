@@ -30,7 +30,12 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         AND p.isDeleted = false
     """)
     Optional<Post> findByIdWithDetails(@Param("postId") UUID postId);
-
+    /**
+     * KHÔNG DÙNG ORDER BY TRONG JPQL ĐƯỢC: JPQL thuần túy không hỗ trợ sắp xếp theo thứ tự của list `:ids` truyền vào.
+     * DB SẼ TRẢ VỀ THỨ TỰ LỘN XỘN: Câu lệnh `WHERE p.id IN :ids` sẽ khiến DB trả dữ liệu về theo thứ tự quét Index ngẫu nhiên.
+     * KHÔNG PHÂN TRANG Ở ĐÂY: Hàm này chỉ nhận IDs đã phân trang từ trước để tránh lỗi MultipleBagFetchException.
+     * Thứ tự sắp xếp đúng chuẩn của Cursor sẽ được xử lý ở tầng Service bằng Java Stream.
+     */
     // Fetch đầy đủ nhiều post theo danh sách IDs (không có pagination)
     @Query("""
         SELECT DISTINCT p FROM Post p

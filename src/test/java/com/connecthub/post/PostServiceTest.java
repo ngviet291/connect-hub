@@ -736,7 +736,8 @@ class PostServiceTest {
         @Test
         @DisplayName("Thất bại - Hashtag không tồn tại")
         void getPostsByHashtag_HashtagNotFound() {
-            when(hashtagRepository.findByName("unknown")).thenReturn(Optional.empty());
+            when(hashtagRepository.findIdByName("unknown"))
+                    .thenReturn(Optional.empty());
 
             assertThrows(HashtagNotFoundException.class,
                     () -> postService.getPostsByHashtag("unknown", null, 5));
@@ -751,7 +752,10 @@ class PostServiceTest {
             UUID id2 = UUID.randomUUID();
             UUID id3 = UUID.randomUUID();
 
-            when(hashtagRepository.findByName("java")).thenReturn(Optional.of(mockHashtag));
+            UUID hashtagId = UUID.randomUUID();
+
+            when(hashtagRepository.findIdByName("java"))
+                    .thenReturn(Optional.of(hashtagId));
             // Service dùng findPostIdsByHashtagId trả về List<UUID>
             when(postHashtagRepository.findPostIdsByHashtagId(
                     eq(mockHashtag.getId()), isNull(), eq(Limit.of(size + 1))))
@@ -772,7 +776,10 @@ class PostServiceTest {
             int size = 5;
             UUID id1 = UUID.randomUUID();
 
-            when(hashtagRepository.findByName("java")).thenReturn(Optional.of(mockHashtag));
+            UUID hashtagId = UUID.randomUUID();
+
+            when(hashtagRepository.findIdByName("java"))
+                    .thenReturn(Optional.of(hashtagId));
             when(postHashtagRepository.findPostIdsByHashtagId(
                     eq(mockHashtag.getId()), isNull(), eq(Limit.of(size + 1))))
                     .thenReturn(List.of(id1));
@@ -789,7 +796,10 @@ class PostServiceTest {
         @Test
         @DisplayName("Thành công - Không có bài viết")
         void getPostsByHashtag_Empty() {
-            when(hashtagRepository.findByName("java")).thenReturn(Optional.of(mockHashtag));
+            UUID hashtagId = UUID.randomUUID();
+
+            when(hashtagRepository.findIdByName("java"))
+                    .thenReturn(Optional.of(hashtagId));
             when(postHashtagRepository.findPostIdsByHashtagId(any(), any(), any()))
                     .thenReturn(List.of());
 
@@ -802,13 +812,16 @@ class PostServiceTest {
         @Test
         @DisplayName("Thành công - Hashtag normalize về lowercase")
         void getPostsByHashtag_NormalizesToLowercase() {
-            when(hashtagRepository.findByName("java")).thenReturn(Optional.of(mockHashtag));
+            UUID hashtagId = UUID.randomUUID();
+
+            when(hashtagRepository.findIdByName("java"))
+                    .thenReturn(Optional.of(hashtagId));
             when(postHashtagRepository.findPostIdsByHashtagId(any(), any(), any()))
                     .thenReturn(List.of());
 
             postService.getPostsByHashtag("JAVA", null, 5);
 
-            verify(hashtagRepository).findByName("java");
+            verify(hashtagRepository).findIdByName("java");
         }
     }
 
