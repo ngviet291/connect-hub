@@ -1,4 +1,4 @@
-package com.connecthub.common.sercurity.websocket;
+package com.connecthub.common.security.websocket;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

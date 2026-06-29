@@ -1,4 +1,4 @@
-package com.connecthub.common.sercurity.rest;
+package com.connecthub.common.security.rest;
 
 import com.connecthub.common.dto.response.ErrorResponse;
 import com.connecthub.common.exception.ErrorCode;

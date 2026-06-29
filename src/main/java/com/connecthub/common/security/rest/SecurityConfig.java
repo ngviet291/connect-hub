@@ -1,4 +1,4 @@
-package com.connecthub.common.sercurity.rest;
+package com.connecthub.common.security.rest;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

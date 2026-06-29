@@ -1,4 +1,4 @@
-package com.connecthub.common.sercurity.websocket;
+package com.connecthub.common.security.websocket;
 
 import com.connecthub.modules.features.user.dto.request.IntrospectRequest;
 import com.connecthub.modules.features.user.dto.response.IntrospectResponse;

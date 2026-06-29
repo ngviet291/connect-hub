@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ReportTargetValidator.class)
 public @interface ValidReportTarget {
-    String message() default "Exactly one of targetUserId or postId must be provided";
+    String message() default "error.moderation.description_required_for_other";
 
     Class<?>[] groups() default {};
 

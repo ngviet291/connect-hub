@@ -1,6 +1,6 @@
 package com.connecthub.common.websocket;
 
-import com.connecthub.common.sercurity.websocket.StompAuthChannelInterceptor;
+import com.connecthub.common.security.websocket.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;

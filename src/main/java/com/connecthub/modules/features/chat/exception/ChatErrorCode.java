@@ -23,8 +23,7 @@ public enum ChatErrorCode implements BaseErrorCode {
     CANNOT_REMOVE_ADMIN("error.chat.cannot_remove_admin", HttpStatus.BAD_REQUEST),
     CONVERSATION_PERMISSION_DENIED("error.chat.conversation_permission_denied", HttpStatus.FORBIDDEN),
     ADMIN_CANNOT_LEAVE_GROUP("error.chat.admin_cannot_leave_group", HttpStatus.BAD_REQUEST),
-
-    ;
+    MESSAGE_CONTENT_OR_MEDIA_REQUIRED("error.chat.message_content_or_media_required", HttpStatus.BAD_REQUEST);
     private final String message;
     private final HttpStatus statusCode;
 
@@ -32,6 +31,7 @@ public enum ChatErrorCode implements BaseErrorCode {
     public String toString() {
         return name();
     }
+
     ChatErrorCode(String message, HttpStatus statusCode) {
         this.message = message;
         this.statusCode = statusCode;

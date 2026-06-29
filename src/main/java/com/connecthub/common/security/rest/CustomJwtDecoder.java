@@ -1,4 +1,4 @@
-package com.connecthub.common.sercurity.rest;
+package com.connecthub.common.security.rest;
 
 import com.connecthub.modules.features.user.dto.request.IntrospectRequest;
 import com.connecthub.modules.features.user.exception.AccountLockedException;
