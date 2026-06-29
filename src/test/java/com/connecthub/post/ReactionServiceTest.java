@@ -46,7 +46,7 @@ class ReactionServiceTest {
     @BeforeEach
     void setUp() {
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(MOCK_USER_ID);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(MOCK_USER_ID);
     }
 
     @AfterEach

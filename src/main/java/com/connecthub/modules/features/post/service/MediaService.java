@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.post.service;
 
+import com.connecthub.common.dto.response.UploadMediaResponse;
 import com.connecthub.common.exception.UploadMediaException;
 import com.connecthub.common.service.MediaStorageService;
 import com.connecthub.common.util.AppUtil;
@@ -24,54 +25,47 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class MediaService {
-
-    private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;
-    private static final long MAX_VIDEO_SIZE = 100L * 1024 * 1024;
     private static final String POST_MEDIA_FOLDER = "post-media";
 
     private final MediaStorageService mediaStorageService;
     private final MediaRepository mediaRepository;
 
-    //Upload files và trả về list Media đã lưu (có post gắn sẵn).
-     //PostService dùng list này để set vào post.media trước khi map response.
-
     public List<Media> uploadAndAttachToPost(List<MultipartFile> files, Post post) {
-        List<Media> result = new ArrayList<>();
-        if (files == null || files.isEmpty()) return result;
+        return files.stream()
+                .filter(file -> !file.isEmpty())
+                .map(file -> upload(file, post))
+                .toList();
+    }
 
-        for (MultipartFile file : files) {
-            if (file == null || file.isEmpty()) continue;
+    private Media upload(MultipartFile file, Post post) {
+        String contentType = file.getContentType();
+        if (contentType == null) throw new InvalidFileTypeException();
 
-            String contentType = file.getContentType();
-            if (contentType == null) throw new InvalidFileTypeException();
+        MediaType mediaType = resolveMediaType(contentType);
 
-            MediaType mediaType = resolveMediaType(contentType);
-            validateFileSize(file.getSize(), mediaType);
+        try {
+            byte[] bytes = file.getBytes();
+            UploadMediaResponse uploadResponse = (mediaType == MediaType.VIDEO
+                    ? mediaStorageService.uploadVideo(bytes, POST_MEDIA_FOLDER)
+                    : mediaStorageService.uploadImage(bytes, POST_MEDIA_FOLDER)
+            ).get();
 
-            try {
-                var uploadResponse = (mediaType == MediaType.VIDEO
-                        ? mediaStorageService.uploadVideo(file.getBytes(), POST_MEDIA_FOLDER)
-                        : mediaStorageService.uploadImage(file.getBytes(), POST_MEDIA_FOLDER)
-                ).join();
+            Media media = mediaRepository.save(Media.builder()
+                    .id(AppUtil.generateUUID())
+                    .url(uploadResponse.getUrl())
+                    .publicAvtId(uploadResponse.getPublicId())
+                    .type(mediaType)
+                    .size(BigInteger.valueOf(file.getSize()))
+                    .post(post)
+                    .build());
 
-                Media media = mediaRepository.save(Media.builder()
-                        .id(UuidCreator.getTimeOrderedEpoch())
-                        .url(uploadResponse.getUrl())
-                        .publicAvtId(uploadResponse.getPublicId())
-                        .type(mediaType)
-                        .size(BigInteger.valueOf(file.getSize()))
-                        .post(post)
-                        .build());
+            log.info("Media uploaded: {} -> post: {}", media.getId(), post.getId());
+            return media;
 
-                result.add(media);
-                log.info("Media uploaded: {} -> post: {}", media.getId(), post.getId());
-
-            } catch (Exception e) {
-                log.error("Upload media failed for post: {}", post.getId(), e);
-                throw new UploadMediaException();
-            }
+        } catch (Exception e) {
+            log.error("Upload media failed for post: {}", post.getId(), e);
+            throw new UploadMediaException();
         }
-        return result;
     }
 
     private MediaType resolveMediaType(String contentType) {
@@ -80,8 +74,4 @@ public class MediaService {
         throw new InvalidFileTypeException();
     }
 
-    private void validateFileSize(long size, MediaType type) {
-        long max = (type == MediaType.VIDEO) ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-        if (size > max) throw new FileSizeExceededException();
-    }
 }

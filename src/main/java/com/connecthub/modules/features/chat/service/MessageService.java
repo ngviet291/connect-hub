@@ -84,7 +84,7 @@ public class MessageService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public void deleteMessage(UUID messageId) {
-        UUID currentUser = AppUtil.userIdFormAuthentication();
+        UUID currentUser = AppUtil.userIdFromAuthentication();
         User user = userRepository.getReferenceById(currentUser);
 
         Message message = messageRepository.findById(messageId)
@@ -100,7 +100,7 @@ public class MessageService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public CursorResponse<MessageResponse> getMessages(UUID conversationId, UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         boolean isMember = conversationMemberRepository
                 .existsByConversationIdAndUserId(conversationId, currentUserId);

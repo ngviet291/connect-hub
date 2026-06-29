@@ -10,10 +10,4 @@ import java.util.UUID;
 
 @Repository
 public interface PostViewRepository extends JpaRepository<PostView, UUID> {
-    @Query("""
-    SELECT p.viewCount
-    FROM Post p
-    WHERE p.id = :postId
-    """)
-    Long getViewCount(@Param("postId") UUID postId);
 }

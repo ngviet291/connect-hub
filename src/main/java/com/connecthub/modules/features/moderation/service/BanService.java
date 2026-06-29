@@ -51,7 +51,7 @@ public class BanService {
     @CacheEvict(value = ACTIVE_BAN_CACHE, key = "#request.userId")
     public BanResponse createBan(CreateBanRequest request) {
         Ban banEntity = banMapper.toBan(request);
-        UUID issuerId = AppUtil.userIdFormAuthentication();
+        UUID issuerId = AppUtil.userIdFromAuthentication();
 
         // nếu người dùng đã bị cấm, ném ra ngoại lệ
         if (banRepository.existsActiveBanByUserId(request.getUserId(), LocalDateTime.now())) {
@@ -93,7 +93,7 @@ public class BanService {
             throw new BanAlreadyInactiveException();
         }
 
-        User unbannedBy = userRepository.getReferenceById(AppUtil.userIdFormAuthentication());
+        User unbannedBy = userRepository.getReferenceById(AppUtil.userIdFromAuthentication());
         ban.setUnbannedBy(unbannedBy);
         ban.setUnbannedAt(LocalDateTime.now());
         ban.setUnbanReason(request.getUnbanReason());

@@ -58,7 +58,7 @@ public class ChatService {
     @PreAuthorize("hasRole('USER')")
     public MessageResponse sendMessage(SendMessageRequest request) {
         validateContentPresent(request);
-        UUID senderId = AppUtil.userIdFormAuthentication();
+        UUID senderId = AppUtil.userIdFromAuthentication();
 
         if (request.getConversationId() != null) {
             // Có conversationId → có thể là GROUP, hoặc PRIVATE gửi tiếp vào
@@ -168,7 +168,7 @@ public class ChatService {
     @PreAuthorize("hasRole('USER')")
     @Transactional
     public void markConversationAsRead(UUID conversationId, UUID lastMessageId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         ConversationMember member = conversationMemberRepository
                 .findByConversationIdAndUserId(conversationId, currentUserId)

@@ -32,8 +32,6 @@ public class MentionService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public CursorResponse<MentionResponse> getMentionsByPost(UUID postId, UUID cursor, int size) {
-        postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
-
         List<Mention> mentions = new ArrayList<>(
                 mentionRepository.findByPostId(postId, cursor, Limit.of(size + 1))
         );
@@ -55,7 +53,7 @@ public class MentionService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public CursorResponse<PostResponse> getMyMentions(UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         List<Mention> mentions = new ArrayList<>(
                 mentionRepository.findByUserId(currentUserId, cursor, Limit.of(size + 1))

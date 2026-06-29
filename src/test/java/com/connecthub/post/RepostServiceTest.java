@@ -45,7 +45,7 @@ class RepostServiceTest {
     @BeforeEach
     void setUp() {
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication)
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication)
                 .thenReturn(MOCK_USER_ID);
     }
 

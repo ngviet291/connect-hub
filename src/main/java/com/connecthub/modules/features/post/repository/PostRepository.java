@@ -57,7 +57,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """)
     List<UUID> findPublicFeedIds(@Param("cursor") UUID cursor, Limit limit);
 
-    // Query 1: chỉ lấy IDs của replies (có pagination, không JOIN collection)
+    // Query 2: chỉ lấy IDs của replies (có pagination, không JOIN collection)
     @Query("""
         SELECT p.id FROM Post p
         WHERE p.parentPost.id = :parentPostId
@@ -154,4 +154,21 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<UUID> searchIdsByKeyword(@Param("keyword") String keyword,
                                   @Param("cursor") UUID cursor,
                                   Limit limit);
+    Optional<Post> findByIdAndUserId(UUID id, UUID userId);
+    @Query("""
+    SELECT p FROM Post p
+    LEFT JOIN FETCH p.media
+    LEFT JOIN FETCH p.user
+    LEFT JOIN FETCH p.quotePost qp
+    LEFT JOIN FETCH qp.media
+    LEFT JOIN FETCH qp.user
+    LEFT JOIN FETCH p.postHashtags ph
+    LEFT JOIN FETCH ph.hashtag
+    LEFT JOIN FETCH p.mentions m
+    LEFT JOIN FETCH m.user
+    WHERE p.id = :postId
+    AND p.user.id = :userId
+    AND p.isDeleted = false
+""")
+    Optional<Post> findByIdAndUserIdWithDetails(@Param("postId") UUID postId, @Param("userId") UUID userId);
 }

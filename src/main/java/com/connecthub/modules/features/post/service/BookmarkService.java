@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -37,27 +36,27 @@ public class BookmarkService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public boolean toggleBookmark(UUID postId) {
-        UUID userId = AppUtil.userIdFormAuthentication();
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
-        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        UUID userId = AppUtil.userIdFromAuthentication();
 
         return bookmarkRepository.findByPostIdAndUserId(postId, userId)
                 .map(existing -> {
-                    // Đã bookmark  xóa
                     bookmarkRepository.delete(existing);
-                    postRepository.decrementBookmarkCount(postId); //  giảm counter
+                    postRepository.decrementBookmarkCount(postId);
                     log.info("User {} unbookmarked post {}", userId, postId);
                     return false;
                 })
                 .orElseGet(() -> {
-                    // Chưa bookmark  thêm
-                    Bookmark bookmark = Bookmark.builder()
-                            .id(UuidCreator.getTimeOrderedEpoch())
+                    // Chỉ load khi thực sự cần tạo bookmark mới
+                    if (!postRepository.existsById(postId)) throw new PostNotFoundException();
+                    User user = userRepository.getReferenceById(userId);
+                    Post post = postRepository.getReferenceById(postId);
+
+                    bookmarkRepository.save(Bookmark.builder()
+                            .id(AppUtil.generateUUID())
                             .user(user)
                             .post(post)
-                            .build();
-                    bookmarkRepository.save(bookmark);
-                    postRepository.incrementBookmarkCount(postId); // tăng counter
+                            .build());
+                    postRepository.incrementBookmarkCount(postId);
                     log.info("User {} bookmarked post {}", userId, postId);
                     return true;
                 });
@@ -66,7 +65,7 @@ public class BookmarkService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public CursorResponse<PostResponse> getBookmarkedPosts(UUID cursor, int size) {
-        UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFromAuthentication();
 
         List<Bookmark> bookmarks = new ArrayList<>(
                 bookmarkRepository.findByUserIdWithDetails(userId, cursor, Limit.of(size + 1))
