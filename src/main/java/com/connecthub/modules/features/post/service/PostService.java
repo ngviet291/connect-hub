@@ -108,7 +108,7 @@ public class PostService {
     @PreAuthorize("hasRole('ROLE_USER')")
     public void deletePost(UUID postId) {
         UUID userId = AppUtil.userIdFromAuthentication();
-        Post post = postRepository.findByIdAndUserId(postId, userId)
+        Post post = postRepository.findByIdAndUserIdAndIsDeletedFalse(postId, userId)
                 .orElseThrow(PostAccessDeniedException::new);
 
         post.setDeleted(true);
@@ -152,9 +152,6 @@ public class PostService {
         UUID hashtagId = hashtagRepository.findIdByName(normalized)
                 .orElseThrow(() -> new HashtagNotFoundException(normalized));
         List<UUID> ids = postHashtagRepository.findPostIdsByHashtagId(hashtagId, cursor, Limit.of(size + 1));
-
-        // Nếu không có bài viết nào thì trả về kết quả rỗng luôn, né việc gọi SQL IN ()
-        // vô nghĩa
         if (ids.isEmpty()) {
             return AppUtil.buildCursorResponse(Collections.emptyList(), size, Post::getId, postMapper::mapToResponse);
         }
@@ -204,8 +201,7 @@ public class PostService {
                         Post::getId,
                         p -> p,
                         (existing, replacement) -> existing));
-        // duyệt theo mảng ids gốc để ép List Post đầu ra phải khớp 100% thứ tự chuẩn
-        // của Cursor
+        // duyệt theo mảng ids gốc để ép List Post đầu ra phải khớp 100% thứ tự chuẩn của Cursor
         List<Post> posts = ids.stream()
                 .map(postMap::get)
                 .filter(Objects::nonNull)

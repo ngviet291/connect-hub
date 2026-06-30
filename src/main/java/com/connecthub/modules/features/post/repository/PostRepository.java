@@ -36,7 +36,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
      * KHÔNG PHÂN TRANG Ở ĐÂY: Hàm này chỉ nhận IDs đã phân trang từ trước để tránh lỗi MultipleBagFetchException.
      * Thứ tự sắp xếp đúng chuẩn của Cursor sẽ được xử lý ở tầng Service bằng Java Stream.
      */
-    // Fetch đầy đủ nhiều post theo danh sách IDs (không có pagination)
+    // Fetch đầy đủ nhiều post theo danh sách IDs (dùng cho getPost/updatePost - cần full data)
     @Query("""
         SELECT DISTINCT p FROM Post p
         LEFT JOIN FETCH p.media
@@ -49,8 +49,23 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         LEFT JOIN FETCH p.mentions m
         LEFT JOIN FETCH m.user
         WHERE p.id IN :ids
+        AND p.isDeleted = false
     """)
     List<Post> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
+
+    /**
+     * Bản TỐI GIẢN cho list/feed (getUserFeed, getPostsByHashtag, getReplies):
+     * chỉ JOIN media + user, KHÔNG kéo quotePost lồng nhau / hashtags / mentions
+     * vì list view không cần đầy đủ như xem chi tiết 1 post -> đỡ tốn băng thông + memory.
+     */
+    @Query("""
+        SELECT DISTINCT p FROM Post p
+        LEFT JOIN FETCH p.media
+        LEFT JOIN FETCH p.user
+        WHERE p.id IN :ids
+        AND p.isDeleted = false
+    """)
+    List<Post> findAllForListByIds(@Param("ids") List<UUID> ids);
 
     // Query 1: chỉ lấy IDs cho feed (có pagination, không JOIN collection)
     @Query("""
@@ -76,7 +91,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             Limit limit);
 
     @Modifying
-    @Query("UPDATE Post p SET p.commentCount = p.commentCount + 1 WHERE p.id = :postId")
+    @Query("UPDATE Post p SET p.commentCount = p.commentCount + 1 WHERE p.id = :postId AND p.isDeleted = false")
     void incrementCommentCount(@Param("postId") UUID postId);
 
     @Modifying
@@ -159,6 +174,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<UUID> searchIdsByKeyword(@Param("keyword") String keyword,
                                   @Param("cursor") UUID cursor,
                                   Limit limit);
+    Optional<Post> findByIdAndUserIdAndIsDeletedFalse(UUID id, UUID userId);
     Optional<Post> findByIdAndUserId(UUID id, UUID userId);
     @Query("""
     SELECT p FROM Post p
