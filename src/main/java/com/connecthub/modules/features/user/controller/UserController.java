@@ -36,13 +36,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Validated
 @RestController
-@RequestMapping("/v1/users")
+@RequestMapping("/v1")
 public class UserController {
 
     private final UserService userService;
 
     // ADMIN ONLY
-    @GetMapping("/allUsers")
+    @GetMapping("/admin/users/allusers")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getAllUsers(
             @RequestParam(required = false) UUID cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
@@ -54,7 +54,7 @@ public class UserController {
                 .build();
     }
     // ADMIN ONLY
-    @GetMapping("/{id}")
+    @GetMapping("/admin/users/{id}")
     public ApiResponse<UserResponse> getUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.GET_USER_SUCCESS.getCode())
@@ -62,7 +62,7 @@ public class UserController {
                 .data(userService.getUserById(id))
                 .build();
     }
-    @GetMapping
+    @GetMapping("/users")
     public ApiResponse<UserResponse> getUser() {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.GET_USER_SUCCESS.getCode())
@@ -71,7 +71,7 @@ public class UserController {
                 .build();
     }
     // ADMIN
-    @GetMapping("/{id}/followers")
+    @GetMapping("/admin/users/{id}/followers")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowers(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID cursor,
@@ -84,7 +84,7 @@ public class UserController {
                 .build();
     }
     // USER
-    @GetMapping("/followers")
+    @GetMapping("/users/followers")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowers(
             @RequestParam(required = false) UUID cursor,
             @RequestParam(defaultValue = "20") @Min(3) @Max(100) int size
@@ -97,7 +97,7 @@ public class UserController {
     }
 
     // ADMIN
-    @GetMapping("/{id}/following")
+    @GetMapping("/admin/users/{id}/following")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowing(
             @PathVariable UUID id,
             @RequestParam(required = false) UUID cursor,
@@ -110,7 +110,7 @@ public class UserController {
                 .build();
     }
     // USER
-    @GetMapping("/following")
+    @GetMapping("/users/following")
     public ApiResponse<CursorResponse<UserSummaryResponse>> getFollowing(
             @RequestParam(required = false) UUID cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
@@ -123,7 +123,7 @@ public class UserController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/{id}/follow")
+    @PostMapping("/users/{id}/follow")
     public ApiResponse<FollowResponse> follow(@PathVariable UUID id) {
         return ApiResponse.<FollowResponse>builder()
                 .code(UserResponseCode.FOLLOW_USER_SUCCESS.getCode())
@@ -131,8 +131,8 @@ public class UserController {
                 .data(userService.followUser(id))
                 .build();
     }
-
-    @DeleteMapping("/{id}/unfollow")
+    //users
+    @DeleteMapping("/users/{id}/unfollow")
     public ApiResponse<FollowResponse> unfollow(@PathVariable UUID id) {
         return ApiResponse.<FollowResponse>builder()
                 .code(UserResponseCode.UNFOLLOW_USER_SUCCESS.getCode())
@@ -141,7 +141,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping
+    @PutMapping("/users/{id}")
     public ApiResponse<UserResponse> updateUser(
             @Valid @RequestBody UserUpdateRequest request
     ) {
@@ -152,7 +152,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/users/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<UserResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.UPDATE_USER_SUCCESS.getCode())
@@ -161,7 +161,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("/status")
+    @PutMapping("/users/status")
     public ApiResponse<Void> changeStatus(
             @Valid @RequestBody UserStatusRequest request
     ) {
@@ -172,7 +172,7 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping("/stats")
+    @GetMapping("/users/stats")
     public ApiResponse<FollowStatsResponse> getStats() {
         return ApiResponse.<FollowStatsResponse>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
@@ -182,7 +182,7 @@ public class UserController {
     }
 
     // ADMIN
-    @GetMapping("/{id}/stats")
+    @GetMapping("/admin/users/{id}/stats")
     public ApiResponse<FollowStatsResponse> getStats(@PathVariable UUID id) {
         return ApiResponse.<FollowStatsResponse>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
@@ -193,7 +193,7 @@ public class UserController {
 
     //User block
     // api này dùng để chặn người dùng
-    @PostMapping("/{id}/block")
+    @PostMapping("/users/{id}/block")
     public ApiResponse<UserResponse> blockUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.BLOCK_USER_SUCCESS.getCode())
@@ -202,7 +202,7 @@ public class UserController {
                 .build();
     }
     //  api này dùng để bỏ chặn người dùng
-    @DeleteMapping("/{id}/block")
+    @DeleteMapping("/users/{id}/block")
     public ApiResponse<UserResponse> unblockUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.UNBLOCK_USER_SUCCESS.getCode())
@@ -210,7 +210,7 @@ public class UserController {
                 .data(userService.unblockUser(id))
                 .build();
     }
-    @GetMapping("/blocked")
+    @GetMapping("/users/blocked")
     // lấy danh sách người dùng bị chặn bởi người dùng hiện tại
     public ApiResponse<CursorResponse<UserSummaryResponse>> getBlockedUsers(
             @RequestParam(required = false) UUID cursor,
