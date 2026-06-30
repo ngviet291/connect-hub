@@ -44,13 +44,7 @@ public class PostService {
         UUID userId = AppUtil.userIdFromAuthentication();
 
         Post post = postMapper.toPost(request);
-        post.setId(AppUtil.generateUUID());
-        post.setUser(getUserOrThrow(userId));
-        post.setDeleted(false);
-        post.setMedia(new HashSet<>());
-        post.setPostHashtags(new HashSet<>());
-        post.setMentions(new HashSet<>());
-
+        postMapper.initNewPost(post, getUserOrThrow(userId));
         if (request.getParentPostId() != null)
             post.setParentPost(getPostOrThrow(request.getParentPostId()));
         if (request.getQuotePostId() != null)
@@ -59,12 +53,15 @@ public class PostService {
         Post savedPost = postRepository.save(post);
 
         if (request.getFiles() != null && !request.getFiles().isEmpty())
+            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getMedia().addAll(
                     mediaService.uploadAndAttachToPost(request.getFiles(), savedPost));
         if (request.getHashtags() != null && !request.getHashtags().isEmpty())
+            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getPostHashtags().addAll(
                     addHashtagsToPost(savedPost, request.getHashtags()));
         if (request.getMentionUsernames() != null && !request.getMentionUsernames().isEmpty())
+            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getMentions().addAll(
                     addMentionsByUsername(savedPost, request.getMentionUsernames()));
 
@@ -93,16 +90,14 @@ public class PostService {
 
         if (request.getHashtags() != null) {
             postHashtagRepository.deleteByPostId(post.getId());
-            post.getPostHashtags().clear();
             if (!request.getHashtags().isEmpty())
-                post.getPostHashtags().addAll(addHashtagsToPost(post, request.getHashtags()));
+                post.setPostHashtags(new HashSet<>(addHashtagsToPost(post, request.getHashtags())));
         }
 
         if (request.getMentionUsernames() != null) {
             mentionRepository.deleteByPostId(post.getId());
-            post.getMentions().clear();
             if (!request.getMentionUsernames().isEmpty())
-                post.getMentions().addAll(addMentionsByUsername(post, request.getMentionUsernames()));
+                post.setMentions(new HashSet<>(addMentionsByUsername(post, request.getMentionUsernames())));
         }
         Post updated = postRepository.save(post);
         log.info("Post updated: {} by user: {}", postId, userId);
@@ -115,9 +110,6 @@ public class PostService {
         UUID userId = AppUtil.userIdFromAuthentication();
         Post post = postRepository.findByIdAndUserId(postId, userId)
                 .orElseThrow(PostAccessDeniedException::new);
-
-        if (post.isDeleted())
-            throw new PostNotFoundException();
 
         post.setDeleted(true);
         postRepository.save(post);
@@ -281,11 +273,7 @@ public class PostService {
     }
 
     private Post getPostOrThrow(UUID postId) {
-        Post post = postRepository.findById(postId)
+        return postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(PostNotFoundException::new);
-        if (post.isDeleted()) {
-            throw new PostNotFoundException();
-        }
-        return post;
     }
 }

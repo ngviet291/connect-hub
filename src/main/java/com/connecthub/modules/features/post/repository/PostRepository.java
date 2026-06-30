@@ -176,4 +176,5 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     AND p.isDeleted = false
 """)
     Optional<Post> findByIdAndUserIdWithDetails(@Param("postId") UUID postId, @Param("userId") UUID userId);
+    Optional<Post> findByIdAndIsDeletedFalse(UUID id);
 }

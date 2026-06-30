@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.post.mapper;
 
+import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.response.MediaResponse;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
@@ -13,6 +14,7 @@ import com.connecthub.modules.features.user.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -41,7 +43,14 @@ public interface PostMapper {
     @Mapping(target = "bookmarkCount", ignore = true)
     @Mapping(target = "viewCount",     ignore = true)
     Post toPost(PostRequest request);
-
+    default void initNewPost(Post post, User user) {
+        post.setId(AppUtil.generateUUID());
+        post.setUser(user);
+        post.setDeleted(false);
+        post.setMedia(new HashSet<>());
+        post.setPostHashtags(new HashSet<>());
+        post.setMentions(new HashSet<>());
+    }
     UserSummaryResponse toUserSummaryResponse(User user);
 
     // Map id -> mediaId, size -> fileSize
