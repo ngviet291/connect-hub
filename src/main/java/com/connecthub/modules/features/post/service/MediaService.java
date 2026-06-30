@@ -4,6 +4,7 @@ import com.connecthub.common.dto.response.UploadMediaResponse;
 import com.connecthub.common.exception.UploadMediaException;
 import com.connecthub.common.service.MediaStorageService;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.post.dto.response.UploadedMedia;
 import com.connecthub.modules.features.post.entity.Media;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.post.enums.MediaType;
@@ -26,14 +27,33 @@ public class MediaService {
     private final MediaStorageService mediaStorageService;
     private final MediaRepository mediaRepository;
 
-    public List<Media> uploadAndAttachToPost(List<MultipartFile> files, Post post) {
+    // I/O thuần, gọi storage bên ngoài (Cloudinary...), KHÔNG đụng DB, KHÔNG @Transactional
+    public List<UploadedMedia> uploadFiles(List<MultipartFile> files) {
         return files.stream()
                 .filter(file -> !file.isEmpty())
-                .map(file -> upload(file, post))
+                .map(this::upload)
                 .toList();
     }
 
-    private Media upload(MultipartFile file, Post post) {
+    // Thuần DB: build entity Media từ kết quả đã upload sẵn rồi save, gọi bên trong transaction
+    public List<Media> attachToPost(List<UploadedMedia> uploadedList, Post post) {
+        List<Media> mediaList = uploadedList.stream()
+                .map(u -> Media.builder()
+                        .id(AppUtil.generateUUID())
+                        .url(u.url())
+                        .publicAvtId(u.publicId())
+                        .type(u.type())
+                        .size(BigInteger.valueOf(u.size()))
+                        .post(post)
+                        .build())
+                .toList();
+
+        List<Media> saved = mediaRepository.saveAll(mediaList);
+        log.info("Media attached to post: {} -> {} file(s)", post.getId(), saved.size());
+        return saved;
+    }
+
+    private UploadedMedia upload(MultipartFile file) {
         String contentType = file.getContentType();
         if (contentType == null)
             throw new InvalidFileTypeException();
@@ -46,23 +66,16 @@ public class MediaService {
                     ? mediaStorageService.uploadVideo(bytes, POST_MEDIA_FOLDER)
                     : mediaStorageService.uploadImage(bytes, POST_MEDIA_FOLDER)).get();
 
-            Media media = mediaRepository.save(Media.builder()
-                    .id(AppUtil.generateUUID())
-                    .url(uploadResponse.getUrl())
-                    .publicAvtId(uploadResponse.getPublicId())
-                    .type(mediaType)
-                    .size(BigInteger.valueOf(file.getSize()))
-                    .post(post)
-                    .build());
-
-            log.info("Media uploaded: {} -> post: {}", media.getId(), post.getId());
-            return media;
+            return new UploadedMedia(uploadResponse.getUrl(), uploadResponse.getPublicId(),
+                    mediaType, file.getSize());
 
         } catch (Exception e) {
-            log.error("Upload media failed for post: {}", post.getId(), e);
+            log.error("Upload media failed", e);
             throw new UploadMediaException();
         }
     }
+
+
 
     private MediaType resolveMediaType(String contentType) {
         if (contentType.startsWith("image/"))

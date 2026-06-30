@@ -193,4 +193,5 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 """)
     Optional<Post> findByIdAndUserIdWithDetails(@Param("postId") UUID postId, @Param("userId") UUID userId);
     Optional<Post> findByIdAndIsDeletedFalse(UUID id);
+    boolean existsByIdAndIsDeletedFalse(UUID id);
 }
