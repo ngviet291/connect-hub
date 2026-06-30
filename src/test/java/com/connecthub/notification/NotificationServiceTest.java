@@ -53,7 +53,7 @@ class NotificationServiceTest {
     void setUp() {
         // Mock static AppUtil để luôn trả về MOCK_USERNAME khi test chạy
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(MOCK_USER_ID);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(MOCK_USER_ID);
     }
 
     @AfterEach

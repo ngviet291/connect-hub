@@ -96,7 +96,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public CursorResponse<UserSummaryResponse> getFollowers(UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         return buildFollowersResponse(currentUserId, cursor, size);
     }
 
@@ -111,14 +111,14 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public CursorResponse<UserSummaryResponse> getFollowing(UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         return buildFollowingResponse(currentUserId, cursor, size);
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public FollowResponse followUser(UUID targetUserId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         if (currentUserId.equals(targetUserId)) {
             throw new ConflictUserException();
         }
@@ -157,7 +157,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public FollowResponse unfollowUser(UUID targetUserId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         if (currentUserId.equals(targetUserId)) {
             throw new ConflictUserException();
         }
@@ -179,7 +179,7 @@ public class UserService {
     public UserResponse updateUser(UserUpdateRequest request) {
 
         // Update the currently authenticated user's profile (no id passed)
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         User currentUser = getUserByIdOrThrow(currentUserId);
 
         // validate phone uniqueness if provided
@@ -198,7 +198,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public UserResponse uploadAvatar(MultipartFile file) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         User currentUser = getUserByIdOrThrow(currentUserId);
 
         // basic validation
@@ -247,7 +247,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public void changeStatus(UserStatusRequest request) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         User currentUser = getUserByIdOrThrow(currentUserId);
 
         UserStatus status = request.getStatus();
@@ -272,7 +272,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public FollowStatsResponse getStats() {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         return buildUserStats(currentUserId);
     }
 
@@ -289,7 +289,7 @@ public class UserService {
     }
 
     private User getCurrentUser() {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         return userRepository.findById(currentUserId)
                 .orElseThrow(UserNotFoundException::new);
     }
@@ -345,7 +345,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public UserResponse blockUser(UUID id) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         if (currentUserId.equals(id)) {
             throw new ConflictUserException();
@@ -381,7 +381,7 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public UserResponse unblockUser(UUID id) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         // Kiểm tra sự tồn tại của user bị chặn
         User blockedUser = userRepository.findById(id)
@@ -400,7 +400,7 @@ public class UserService {
     // get list blocked users by current user(lấy danh sách người dùng bị chặn bởi người dùng hiện tại)
     @Transactional(readOnly = true)
     public CursorResponse<UserSummaryResponse> getBlockedUsers(UUID cursor, int size) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         List<UserBlock> blockedUsers = new ArrayList<>(
                 userBlockRepository.findBlockedUsers(currentUserId, cursor, Limit.of(size + 1))
@@ -427,7 +427,7 @@ public class UserService {
     @Transactional(readOnly = true)
     // kiểm tra trạng thái block của người dùng hiện tại với một người dùng khác
     public BlockStatusResponse isBlockingUser(UUID targetUserId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         if (!userRepository.existsById(targetUserId)) {
             throw new UserNotFoundException();

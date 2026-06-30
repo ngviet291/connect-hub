@@ -50,7 +50,7 @@ public class ReportService {
     @Transactional
     public ReportResponse createReport(CreateReportRequest request) {
         Report reportEntity = reportMapper.toReport(request);
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         if (request.getTargetUserId() != null) {
             if (reportRepository.existsByReporterIdAndTargetUserIdAndStatus(
                     currentUserId, request.getTargetUserId(), ReportStatus.PENDING)) {
@@ -63,7 +63,7 @@ public class ReportService {
             }
         }
 
-        User currentUser = userRepository.getReferenceById(AppUtil.userIdFormAuthentication());
+        User currentUser = userRepository.getReferenceById(AppUtil.userIdFromAuthentication());
         reportEntity.setId(AppUtil.generateUUID());
 
         reportEntity.setReporter(currentUser);
@@ -98,7 +98,7 @@ public class ReportService {
     @PreAuthorize("hasRole('MODERATOR')")
     public UpdateStatusResponse updateReportStatus(UUID reportId, UpdateReportStatusRequest updateReportStatusRequest) {
 
-        User userResolve = userRepository.getReferenceById(AppUtil.userIdFormAuthentication());
+        User userResolve = userRepository.getReferenceById(AppUtil.userIdFromAuthentication());
 
         Report report = reportRepository.findById(reportId).orElseThrow(ReportNotFoundException::new);
         validateStatus(report.getStatus(), updateReportStatusRequest.getStatus());
@@ -130,7 +130,7 @@ public class ReportService {
         Limit limit = Limit.of(size + 1);
 
         List<Report> reports = new ArrayList<>(
-                reportRepository.findMyReportsAndStatus(AppUtil.userIdFormAuthentication(), reportStatus, cursor, limit)
+                reportRepository.findMyReportsAndStatus(AppUtil.userIdFromAuthentication(), reportStatus, cursor, limit)
         );
 
         return AppUtil.buildCursorResponse(

@@ -98,7 +98,7 @@ class ReportServiceTest {
             Report savedReport = Report.builder().id(UUID.randomUUID()).post(post).reporter(currentUser).build();
             ReportResponse expectedResponse = mock(ReportResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             appUtilMock.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
 
             when(reportMapper.toReport(request)).thenReturn(mappedReport);
@@ -130,7 +130,7 @@ class ReportServiceTest {
             Report savedReport = Report.builder().id(UUID.randomUUID()).targetUser(targetUser).reporter(currentUser).build();
             ReportResponse expectedResponse = mock(ReportResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             appUtilMock.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
 
             when(reportMapper.toReport(request)).thenReturn(mappedReport);
@@ -155,7 +155,7 @@ class ReportServiceTest {
             when(request.getPostId()).thenReturn(POST_ID);
             when(request.getTargetUserId()).thenReturn(null);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(reportMapper.toReport(request)).thenReturn(new Report());
             when(reportRepository.existsByReporterIdAndPostIdAndStatus(
                     CURRENT_USER_ID, POST_ID, ReportStatus.PENDING)).thenReturn(true);
@@ -174,7 +174,7 @@ class ReportServiceTest {
             when(request.getTargetUserId()).thenReturn(TARGET_USER_ID);
             // KHÔNG cần stub getPostId() — nhánh targetUserId != null không bao giờ gọi tới nó
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(reportMapper.toReport(request)).thenReturn(new Report());
             when(reportRepository.existsByReporterIdAndTargetUserIdAndStatus(
                     CURRENT_USER_ID, TARGET_USER_ID, ReportStatus.PENDING)).thenReturn(true);
@@ -193,7 +193,7 @@ class ReportServiceTest {
 
             User currentUser = User.builder().id(CURRENT_USER_ID).build();
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             appUtilMock.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
             when(reportMapper.toReport(request)).thenReturn(new Report());
             when(reportRepository.existsByReporterIdAndPostIdAndStatus(
@@ -216,7 +216,7 @@ class ReportServiceTest {
 
             User currentUser = User.builder().id(CURRENT_USER_ID).build();
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             appUtilMock.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
             when(reportMapper.toReport(request)).thenReturn(new Report());
             when(reportRepository.existsByReporterIdAndTargetUserIdAndStatus(
@@ -312,7 +312,7 @@ class ReportServiceTest {
             Report report = Report.builder().id(REPORT_ID).status(ReportStatus.PENDING).build();
             UpdateStatusResponse expectedResponse = mock(UpdateStatusResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(userRepository.getReferenceById(CURRENT_USER_ID)).thenReturn(resolver);
             when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.of(report));
             when(reportRepository.save(report)).thenReturn(report);
@@ -335,7 +335,7 @@ class ReportServiceTest {
             Report report = Report.builder().id(REPORT_ID).status(ReportStatus.REVIEWING).build();
             UpdateStatusResponse expectedResponse = mock(UpdateStatusResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(userRepository.getReferenceById(CURRENT_USER_ID)).thenReturn(resolver);
             when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.of(report));
             when(reportRepository.save(report)).thenReturn(report);
@@ -356,7 +356,7 @@ class ReportServiceTest {
             User resolver = User.builder().id(CURRENT_USER_ID).build();
             Report report = Report.builder().id(REPORT_ID).status(ReportStatus.RESOLVED).build();
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(userRepository.getReferenceById(CURRENT_USER_ID)).thenReturn(resolver);
             when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.of(report));
 
@@ -375,7 +375,7 @@ class ReportServiceTest {
             User resolver = User.builder().id(CURRENT_USER_ID).build();
             Report report = Report.builder().id(REPORT_ID).status(ReportStatus.PENDING).build();
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(userRepository.getReferenceById(CURRENT_USER_ID)).thenReturn(resolver);
             when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.of(report));
 
@@ -390,7 +390,7 @@ class ReportServiceTest {
         void shouldThrowException_whenReportNotFoundForUpdate() {
             UpdateReportStatusRequest request = mock(UpdateReportStatusRequest.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(userRepository.getReferenceById(CURRENT_USER_ID))
                     .thenReturn(User.builder().id(CURRENT_USER_ID).build());
             when(reportRepository.findById(REPORT_ID)).thenReturn(Optional.empty());
@@ -414,7 +414,7 @@ class ReportServiceTest {
             List<Report> reports = List.of(new Report());
             CursorResponse<?> expectedResponse = mock(CursorResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(reportRepository.findMyReportsAndStatus(
                     eq(CURRENT_USER_ID), eq(ReportStatus.PENDING), eq(cursor), any()))
                     .thenReturn(reports);
@@ -435,7 +435,7 @@ class ReportServiceTest {
             List<Report> reports = List.of(new Report());
             CursorResponse<?> expectedResponse = mock(CursorResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(reportRepository.findMyReportsAndStatus(
                     eq(CURRENT_USER_ID), isNull(), eq(cursor), any()))
                     .thenReturn(reports);
@@ -455,7 +455,7 @@ class ReportServiceTest {
             UUID cursor = UUID.randomUUID();
             int size = 5;
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
             when(reportRepository.findMyReportsAndStatus(any(), any(), any(), any()))
                     .thenReturn(List.of());
             appUtilMock.when(() -> AppUtil.buildCursorResponse(any(), anyInt(), any(), any()))

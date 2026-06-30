@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,4 +64,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         WHERE LOWER(u.username) = LOWER(TRIM(:username))
     """)
     Optional<User> findExactByUsername(@Param("username") String username);
+    @Query("SELECT u FROM User u WHERE LOWER(u.username) IN :usernames")
+    List<User> findAllByUsernameIn(@Param("usernames") Collection<String> usernames);
 }

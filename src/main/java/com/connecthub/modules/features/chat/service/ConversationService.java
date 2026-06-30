@@ -108,7 +108,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public CursorResponse<ConversationSummaryResponse> getConversations(UUID cursor, int size, MemberStatus status) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         List<Conversation> conversations = new ArrayList<>(
                 conversationRepository.findConversationsByUserId(currentUserId, cursor, Limit.of(size + 1), status)
@@ -214,7 +214,7 @@ public class ConversationService {
         if (conversation.getName() != null && !conversation.getName().isBlank()) {
             return conversation.getName();
         }
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         List<String> otherUsernames = conversation.getConversationMembers().stream()
                 .map(ConversationMember::getUser)
                 .filter(user -> !user.getId().equals(currentUserId))
@@ -238,7 +238,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public ConversationDetailResponse getConversationDetail(UUID id, UUID membersCursor, int membersSize) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         Conversation conversation = conversationRepository.findById(id)
                 .orElseThrow(ConversationNotFoundException::new);
@@ -282,7 +282,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public ConversationSummaryResponse createGroupConversation(CreateGroupConversationRequest request) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         String groupName = request.getName();
 
@@ -373,7 +373,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public void leaveConversation(UUID conversationId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         ConversationMember conversationMember = conversationMemberRepository.findConversationMemberByConversationIdAndUserId(
                         conversationId, currentUserId)
@@ -391,7 +391,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('USER')")
     @Transactional
     public void removeMember(UUID conversationId, UUID memberId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         requireAdmin(conversationId, currentUserId);
 
@@ -415,7 +415,7 @@ public class ConversationService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public ConversationSummaryResponse updateConversation(UUID conversationId, UpdateConversationRequest request) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         ConversationMember currentMember = requireAdmin(conversationId, currentUserId);
         Conversation conversation = conversationRepository.findById(conversationId)
@@ -458,7 +458,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional
     public ConversationDetailResponse addMembers(UUID conversationId, AddMembersRequest request) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         requireAdmin(conversationId, currentUserId);
 
         Set<UUID> requestedIds = new LinkedHashSet<>(request.getMemberIds());
@@ -502,7 +502,7 @@ public class ConversationService {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ConversationDetailResponse updateMemberRole(UUID conversationId, UUID memberId, UpdateMemberRoleRequest request) {
 
-        requireAdmin(conversationId, AppUtil.userIdFormAuthentication());
+        requireAdmin(conversationId, AppUtil.userIdFromAuthentication());
 
         ConversationMember targetMember = conversationMemberRepository
                 .findConversationMemberByConversationIdAndUserId(conversationId, memberId)

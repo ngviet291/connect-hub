@@ -2,6 +2,7 @@ package com.connecthub.modules.features.search.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.post.dto.projection.HashtagPostCountProjection;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
 import com.connecthub.modules.features.post.entity.Hashtag;
 import com.connecthub.modules.features.post.entity.Post;
@@ -18,89 +19,123 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SearchService {
 
-    private final UserRepository userRepository;
-    private final PostRepository postRepository;
-    private final HashtagRepository hashtagRepository;
-    private final PostMapper postMapper;
+        private final UserRepository userRepository;
+        private final PostRepository postRepository;
+        private final HashtagRepository hashtagRepository;
+        private final PostMapper postMapper;
 
-    /**
-     * GET /v1/search/users?keyword=john
-     * Tìm kiếm người dùng theo tên hoặc username
-     */
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<UserSummaryResponse> searchUsers(String keyword, UUID cursor, int size) {
-        List<User> users = new ArrayList<>(
-                userRepository.searchByNameOrUsername(keyword.trim(), cursor, Limit.of(size + 1))
-        );
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<UserSummaryResponse> searchUsers(String keyword, UUID cursor, int size) {
+                List<User> users = userRepository.searchByNameOrUsername(
+                                keyword.trim(), cursor, Limit.of(size + 1));
 
-        return AppUtil.buildCursorResponse(
-                users, size,
-                User::getId,
-                u -> UserSummaryResponse.builder()
-                        .id(u.getId())
-                        .username(u.getUsername())
-                        .fullName(u.getFullName())
-                        .avatarUrl(u.getAvatarUrl())
-                        .build()
-        );
-    }
-
-    /**
-     * GET /v1/search/posts?keyword=spring
-     * Tìm kiếm bài đăng theo từ khoá trong nội dung
-     */
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<PostResponse> searchPosts(String keyword, UUID cursor, int size) {
-        List<UUID> ids = postRepository.searchIdsByKeyword(keyword.trim(), cursor, Limit.of(size + 1));
-
-        boolean hasNext = ids.size() > size;
-        List<UUID> pageIds = hasNext ? ids.subList(0, size) : ids;
-
-        if (pageIds.isEmpty()) {
-            return CursorResponse.<PostResponse>builder()
-                    .content(List.of()).hasNext(false).nextCursor(null).build();
+                return AppUtil.buildCursorResponse(
+                                users, size,
+                                User::getId,
+                                u -> UserSummaryResponse.builder()
+                                                .id(u.getId())
+                                                .username(u.getUsername())
+                                                .fullName(u.getFullName())
+                                                .avatarUrl(u.getAvatarUrl())
+                                                .build());
         }
 
-        List<Post> posts = new ArrayList<>(postRepository.findAllWithDetailsByIds(pageIds));
-        posts.sort((a, b) -> b.getId().compareTo(a.getId()));
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<PostResponse> searchPosts(
+                        String keyword,
+                        UUID cursor,
+                        int size) {
+                List<UUID> ids = postRepository.searchIdsByKeyword(
+                                keyword.trim(),
+                                cursor,
+                                Limit.of(size + 1));
 
-        return CursorResponse.<PostResponse>builder()
-                .content(posts.stream().map(postMapper::mapToResponse).toList())
-                .hasNext(hasNext)
-                .nextCursor(hasNext ? pageIds.getLast().toString() : null)
-                .build();
-    }
+                if (ids.isEmpty()) {
+                        return emptyCursor();
+                }
 
-    /**
-     * GET /v1/search/hashtags?keyword=fun
-     * Tìm kiếm hashtag theo tên
-     */
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<HashtagSearchResponse> searchHashtags(String keyword, UUID cursor, int size) {
-        List<Hashtag> hashtags = new ArrayList<>(
-                hashtagRepository.searchByName(keyword.trim(), cursor, Limit.of(size + 1))
-        );
+                Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
+                                .stream()
+                                .collect(Collectors.toMap(Post::getId, p -> p));
 
-        return AppUtil.buildCursorResponse(
-                hashtags, size,
-                Hashtag::getId,
-                h -> HashtagSearchResponse.builder()
-                        .id(h.getId())
-                        .name(h.getName())
-                        .postCount(h.getPostHashtags() != null ? h.getPostHashtags().size() : 0)
-                        .createdAt(h.getCreatedAt())
-                        .build()
-        );
-    }
+                List<Post> posts = ids.stream()
+                                .map(postMap::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList());
+
+                return AppUtil.buildCursorResponse(
+                                posts,
+                                size,
+                                Post::getId,
+                                postMapper::mapToResponse);
+        }
+
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasRole('ROLE_USER')")
+        public CursorResponse<HashtagSearchResponse> searchHashtags(
+                        String keyword,
+                        UUID cursor,
+                        int size) {
+                List<Hashtag> hashtags = hashtagRepository.searchByName(
+                                keyword.trim(),
+                                cursor,
+                                Limit.of(size + 1));
+
+                if (hashtags.isEmpty()) {
+                        return emptyCursorHashtag();
+                }
+
+                List<UUID> ids = hashtags.stream()
+                                .map(Hashtag::getId)
+                                .toList();
+
+                Map<UUID, Long> countMap = hashtagRepository.countPostsByHashtagIds(ids)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                HashtagPostCountProjection::getHashtagId,
+                                                HashtagPostCountProjection::getPostCount));
+
+                List<HashtagSearchResponse> content = hashtags.stream()
+                                .map(h -> HashtagSearchResponse.builder()
+                                                .id(h.getId())
+                                                .name(h.getName())
+                                                .postCount(
+                                                                countMap.getOrDefault(
+                                                                                h.getId(),
+                                                                                0L))
+                                                .createdAt(h.getCreatedAt())
+                                                .build())
+                                .collect(Collectors.toCollection(ArrayList::new));
+
+                return AppUtil.buildCursorResponse(
+                                content,
+                                size,
+                                HashtagSearchResponse::getId,
+                                // Function.identity() = x -> x
+                                // Dùng khi không cần map sang object khác.
+                                // Ở đây:
+                                // HashtagSearchResponse -> HashtagSearchResponse
+                                // nên chỉ trả về chính object đó.
+                                Function.identity());
+        }
+
+        private CursorResponse<PostResponse> emptyCursor() {
+                return CursorResponse.<PostResponse>builder()
+                                .content(List.of()).hasNext(false).nextCursor(null).build();
+        }
+
+        private CursorResponse<HashtagSearchResponse> emptyCursorHashtag() {
+                return CursorResponse.<HashtagSearchResponse>builder()
+                                .content(List.of()).hasNext(false).nextCursor(null).build();
+        }
 }

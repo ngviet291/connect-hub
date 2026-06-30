@@ -43,7 +43,7 @@ public class NotificationService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public void read(UUID id) {
-        UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFromAuthentication();
         Notification notification = notificationRepository.findByIdAndRecipientId(id, userId)
                 .orElseThrow(NotificationNotFoundException::new);
         notification.setRead(true);
@@ -52,14 +52,14 @@ public class NotificationService {
     @Transactional
     @PreAuthorize("hasRole('ROLE_USER')")
     public void readAll() {
-        UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFromAuthentication();
         notificationRepository.markAsReadAllByIdAndRecipientId(userId);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public NotificationUnreadResponse countUnread() {
-        UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFromAuthentication();
         return NotificationUnreadResponse.builder()
                 .unreadCount(notificationRepository.countUnreadByRecipientIdAndIsReadFalse(userId))
                 .build();
@@ -68,7 +68,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public CursorResponse<NotificationResponse> getNotification(UUID cursor, int size, NotificationType type) {
-        UUID userId = AppUtil.userIdFormAuthentication();
+        UUID userId = AppUtil.userIdFromAuthentication();
         // Lấy dư 1 phần tử (size + 1) bằng Limit (Spring Data 3.x)
         // Bọc vào ArrayList để tránh lỗi UnsupportedOperationException khi remove
         List<Notification> notifications = new ArrayList<>(

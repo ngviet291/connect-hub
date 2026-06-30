@@ -88,7 +88,7 @@ class BanServiceTest {
             Ban savedBan = Ban.builder().id(UUID.randomUUID()).user(bannedUser).bannedBy(issuer).build();
             BanResponse expectedResponse = mock(BanResponse.class);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(ISSUER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(ISSUER_ID);
             appUtilMock.when(AppUtil::generateUUID).thenReturn(UUID.randomUUID());
 
             when(banMapper.toBan(request)).thenReturn(mappedBan);
@@ -113,7 +113,7 @@ class BanServiceTest {
             CreateBanRequest request = mock(CreateBanRequest.class);
             when(request.getUserId()).thenReturn(USER_ID);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(ISSUER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(ISSUER_ID);
             when(banMapper.toBan(request)).thenReturn(new Ban());
             when(banRepository.existsActiveBanByUserId(eq(USER_ID), any(LocalDateTime.class)))
                     .thenReturn(true);
@@ -131,7 +131,7 @@ class BanServiceTest {
             CreateBanRequest request = mock(CreateBanRequest.class);
             when(request.getUserId()).thenReturn(USER_ID);
 
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(ISSUER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(ISSUER_ID);
             when(banMapper.toBan(request)).thenReturn(new Ban());
             when(banRepository.existsActiveBanByUserId(eq(USER_ID), any(LocalDateTime.class)))
                     .thenReturn(false);
@@ -208,7 +208,7 @@ class BanServiceTest {
             BanResponse expectedResponse = mock(BanResponse.class);
 
             when(banRepository.findById(BAN_ID)).thenReturn(Optional.of(activeBan));
-            appUtilMock.when(AppUtil::userIdFormAuthentication).thenReturn(ISSUER_ID);
+            appUtilMock.when(AppUtil::userIdFromAuthentication).thenReturn(ISSUER_ID);
             when(userRepository.getReferenceById(ISSUER_ID)).thenReturn(admin);
             when(banRepository.save(activeBan)).thenReturn(activeBan);
             when(banMapper.toBanResponse(activeBan)).thenReturn(expectedResponse);
