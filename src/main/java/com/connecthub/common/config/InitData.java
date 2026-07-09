@@ -158,7 +158,7 @@ public class InitData implements CommandLineRunner {
             usersToSave.add(moderator);
             // 2. Sử dụng Faker để tự động generate thêm dữ liệu cho các Regular Users
             Faker faker = new Faker(new Locale("en")); // Bạn có thể đổi sang "vi" nếu muốn tên tiếng Việt
-            String defaultPassword = passwordEncoder.encode("password123");
+            String defaultPassword = passwordEncoder.encode("Password@123");
 
             // Thay đổi số 20 thành số lượng user bạn muốn tạo thêm
             for (int i = 0; i < 20; i++) {

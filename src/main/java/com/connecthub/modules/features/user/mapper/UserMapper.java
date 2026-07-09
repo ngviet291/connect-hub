@@ -7,6 +7,7 @@ import com.connecthub.modules.features.user.dto.response.UserResponse;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import java.util.UUID;
@@ -15,7 +16,12 @@ import java.util.UUID;
 public interface UserMapper {
 
     User toUser(UserCreateRequest request);
-
+    @Mapping(
+            target = "roles",
+            expression = "java(user.getRoles().stream()"
+                    + ".map(role -> role.getName().toString())"
+                    + ".collect(java.util.stream.Collectors.toSet()))"
+    )
     UserResponse toUserResponse(User user);
     // User toUserUpdateRequest(UserUpdateRequest request);
 
