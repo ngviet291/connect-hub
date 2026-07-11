@@ -15,6 +15,7 @@ import com.connecthub.modules.features.user.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -62,12 +63,12 @@ public class UserController {
                 .data(userService.getUserById(id))
                 .build();
     }
-    @GetMapping("/users")
-    public ApiResponse<UserResponse> getUser() {
+    @GetMapping("/me")
+    public ApiResponse<UserResponse> getProfile() {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.GET_USER_SUCCESS.getCode())
                 .message(UserResponseCode.GET_USER_SUCCESS.getMessage())
-                .data(userService.getUserById())
+                .data(userService.getProfile())
                 .build();
     }
     // ADMIN
@@ -141,7 +142,7 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("/users/{id}")
+    @PutMapping("/users")
     public ApiResponse<UserResponse> updateUser(
             @Valid @RequestBody UserUpdateRequest request
     ) {
@@ -173,16 +174,15 @@ public class UserController {
     }
 
     @GetMapping("/users/stats")
-    public ApiResponse<FollowStatsResponse> getStats() {
+    public ApiResponse<FollowStatsResponse> getMyStats() {
         return ApiResponse.<FollowStatsResponse>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
                 .message(UserResponseCode.GET_USER_STATS_SUCCESS.getMessage())
-                .data(userService.getStats())
+                .data(userService.getMyStats())
                 .build();
     }
 
-    // ADMIN
-    @GetMapping("/admin/users/{id}/stats")
+    @GetMapping("/users/{id}/stats")
     public ApiResponse<FollowStatsResponse> getStats(@PathVariable UUID id) {
         return ApiResponse.<FollowStatsResponse>builder()
                 .code(UserResponseCode.GET_USER_STATS_SUCCESS.getCode())
@@ -229,6 +229,15 @@ public class UserController {
                 .code(UserResponseCode.GET_BLOCK_STATUS_SUCCESS.getCode())
                 .message(UserResponseCode.GET_BLOCK_STATUS_SUCCESS.getMessage())
                 .data(userService.isBlockingUser(id))
+                .build();
+    }
+
+    @GetMapping("/users/username/{username}")
+    public ApiResponse<UserResponse> getUserByUsername(@PathVariable String username) {
+        return ApiResponse.<UserResponse>builder()
+                .code(UserResponseCode.GET_USER_SUCCESS.getCode())
+                .message(UserResponseCode.GET_USER_SUCCESS.getMessage())
+                .data(userService.getUserByUsername(username))
                 .build();
     }
 }

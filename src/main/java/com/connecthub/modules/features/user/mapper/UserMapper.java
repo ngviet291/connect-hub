@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.user.mapper;
 
 import com.connecthub.modules.features.notification.dto.response.NotificationUserSummaryResponse;
+import com.connecthub.modules.features.social.projection.FollowingRowProjection;
 import com.connecthub.modules.features.user.dto.request.UserCreateRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
 import com.connecthub.modules.features.user.dto.response.UserResponse;
@@ -28,8 +29,9 @@ public interface UserMapper {
     // Update existing User entity from UserUpdateRequest
     void updateUserFromRequest(UserUpdateRequest request, @MappingTarget User user);
 
-    // @Mapping(target = "verified", constant = "false")
     UserSummaryResponse toUserSummaryResponse(User user);
 
     NotificationUserSummaryResponse toNotificationUserSummaryResponse(UUID id, String username, String avatarUrl);
+
+    UserSummaryResponse fromFollowingRowProjection(FollowingRowProjection followingRowProjection);
 }

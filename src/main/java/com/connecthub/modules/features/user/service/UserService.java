@@ -81,7 +81,7 @@ public class UserService {
     // USER
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
-    public UserResponse getUserById() {
+    public UserResponse getProfile() {
         return userMapper.toUserResponse(getCurrentUser());
     }
 
@@ -271,12 +271,12 @@ public class UserService {
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
-    public FollowStatsResponse getStats() {
+    public FollowStatsResponse getMyStats() {
         UUID currentUserId = AppUtil.userIdFromAuthentication();
         return buildUserStats(currentUserId);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public FollowStatsResponse getStats(UUID userId) {
         return buildUserStats(userId);
@@ -437,5 +437,13 @@ public class UserService {
         return BlockStatusResponse.builder()
                 .isBlocked(isBlocked)
                 .build();
+    }
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Transactional(readOnly = true)
+    public UserResponse getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(UserNotFoundException::new);
+        return userMapper.toUserResponse(user);
     }
 }
