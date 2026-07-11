@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.chat.service;
 
+import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.service.WebSocketService;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
@@ -56,7 +57,8 @@ public class ChatService {
     @Transactional
     @PreAuthorize("hasRole('USER')")
     public MessageResponse sendMessage(SendMessageRequest request) {
-        UUID senderId = AppUtil.userIdFormAuthentication();
+        validateContentPresent(request);
+        UUID senderId = AppUtil.userIdFromAuthentication();
 
         if (request.getConversationId() != null) {
             // Có conversationId → có thể là GROUP, hoặc PRIVATE gửi tiếp vào
@@ -126,6 +128,13 @@ public class ChatService {
 
     // ── helpers ──────────────────────────────────────────────────────────
 
+    private void validateContentPresent(SendMessageRequest request) {
+        boolean noContent = request.getContent() == null;
+        boolean noMedia = request.getMedia() == null || request.getMedia().isEmpty();
+        if (noContent && noMedia) {
+            throw new InvalidChatRequestException();
+        }
+    }
 
     private void validateNotBlocked(UUID senderId, UUID recipientId) {
         if (userBlockService.isBlockedBy(senderId, recipientId)) {
@@ -159,7 +168,7 @@ public class ChatService {
     @PreAuthorize("hasRole('USER')")
     @Transactional
     public void markConversationAsRead(UUID conversationId, UUID lastMessageId) {
-        UUID currentUserId = AppUtil.userIdFormAuthentication();
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         ConversationMember member = conversationMemberRepository
                 .findByConversationIdAndUserId(conversationId, currentUserId)

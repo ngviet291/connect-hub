@@ -66,7 +66,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         mockedAppUtil = mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(CURRENT_USER_ID);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(CURRENT_USER_ID);
         mockedAppUtil.when(AppUtil::generateUUID).thenReturn(GENERATED_UUID);
     }
 

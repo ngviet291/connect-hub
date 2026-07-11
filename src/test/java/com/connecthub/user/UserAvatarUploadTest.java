@@ -61,7 +61,7 @@ class UserAvatarUploadTest {
     @Test
     void uploadAvatar_success_deletesOldAvatar() throws Exception {
         UUID userId = UUID.randomUUID();
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(userId);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(userId);
 
         User currentUser = User.builder()
                 .id(userId)
@@ -96,7 +96,7 @@ class UserAvatarUploadTest {
     @Test
     void uploadAvatar_success_noOldAvatar_noDelete() throws Exception {
         UUID userId = UUID.randomUUID();
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(userId);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(userId);
 
         User currentUser = User.builder()
                 .id(userId)
@@ -131,7 +131,7 @@ class UserAvatarUploadTest {
     @Test
     void uploadAvatar_invalidType_throws() {
         UUID userId = UUID.randomUUID();
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(userId);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(userId);
 
         User currentUser = User.builder().id(userId).build();
         Mockito.when(userRepository.findById(userId)).thenReturn(Optional.of(currentUser));
@@ -144,7 +144,7 @@ class UserAvatarUploadTest {
     @Test
     void uploadAvatar_sizeExceeded_throws() {
         UUID userId = UUID.randomUUID();
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(userId);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(userId);
 
         User currentUser = User.builder().id(userId).build();
         Mockito.when(userRepository.findById(userId)).thenReturn(Optional.of(currentUser));

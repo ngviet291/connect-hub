@@ -2,6 +2,7 @@ package com.connecthub.post;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.post.dto.projection.ReactionTypeCountProjection;
 import com.connecthub.modules.features.post.dto.response.ReactionCountResponse;
 import com.connecthub.modules.features.post.dto.response.ReactionResponse;
 import com.connecthub.modules.features.post.entity.Post;
@@ -10,7 +11,6 @@ import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.post.exception.PostNotFoundException;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.post.repository.ReactionRepository;
-import com.connecthub.modules.features.post.repository.ReactionRepository.ReactionTypeCount;
 import com.connecthub.modules.features.post.service.ReactionService;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.repository.UserRepository;
@@ -46,7 +46,7 @@ class ReactionServiceTest {
     @BeforeEach
     void setUp() {
         mockedAppUtil = Mockito.mockStatic(AppUtil.class);
-        mockedAppUtil.when(AppUtil::userIdFormAuthentication).thenReturn(MOCK_USER_ID);
+        mockedAppUtil.when(AppUtil::userIdFromAuthentication).thenReturn(MOCK_USER_ID);
     }
 
     @AfterEach
@@ -372,8 +372,8 @@ class ReactionServiceTest {
     @DisplayName("Test countReactionsByType()")
     class CountReactionsByTypeTest {
 
-        private ReactionTypeCount mockCount(ReactionType type, long count) {
-            return new ReactionTypeCount() {
+        private ReactionTypeCountProjection mockCount(ReactionType type, long count) {
+            return new ReactionTypeCountProjection() {
                 public ReactionType getType() { return type; }
                 public long getCount() { return count; }
             };
@@ -440,7 +440,7 @@ class ReactionServiceTest {
         @DisplayName("Hỗ trợ tất cả 6 loại ReactionType")
         void countReactions_SupportsAllTypes() {
             UUID postId = UUID.randomUUID();
-            List<ReactionTypeCount> allTypes = List.of(
+            List<ReactionTypeCountProjection> allTypes = List.of(
                     mockCount(ReactionType.LIKE, 1),
                     mockCount(ReactionType.LOVE, 2),
                     mockCount(ReactionType.HAHA, 3),

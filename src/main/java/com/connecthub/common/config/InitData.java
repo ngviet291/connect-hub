@@ -128,7 +128,7 @@ public class InitData implements CommandLineRunner {
                     .id(UuidCreator.getTimeOrderedEpoch())
                     .username("admin")
                     .email("admin@connecthub.com")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode("Admin@123"))
                     .fullName("Admin User")
                     .phoneNumber("+84901234567")
                     .avatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=admin")
@@ -144,7 +144,7 @@ public class InitData implements CommandLineRunner {
                     .id(UuidCreator.getTimeOrderedEpoch())
                     .username("moderator")
                     .email("moderator@connecthub.com")
-                    .password(passwordEncoder.encode("moderator123"))
+                    .password(passwordEncoder.encode("Moderator@123"))
                     .fullName("Moderator User")
                     .phoneNumber("+84901234545")
                     .avatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=admin")
@@ -158,7 +158,7 @@ public class InitData implements CommandLineRunner {
             usersToSave.add(moderator);
             // 2. Sử dụng Faker để tự động generate thêm dữ liệu cho các Regular Users
             Faker faker = new Faker(new Locale("en")); // Bạn có thể đổi sang "vi" nếu muốn tên tiếng Việt
-            String defaultPassword = passwordEncoder.encode("password123");
+            String defaultPassword = passwordEncoder.encode("Password@123");
 
             // Thay đổi số 20 thành số lượng user bạn muốn tạo thêm
             for (int i = 0; i < 20; i++) {

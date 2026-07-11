@@ -1,12 +1,13 @@
 package com.connecthub.modules.features.user.dto.response;
 
+import com.connecthub.common.util.AppUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -14,7 +15,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserResponse {
-    private UUID id = UuidCreator.getTimeOrderedEpoch();
+
+    private UUID id;
     private String username;
     private String email;
     private String fullName;
@@ -22,4 +24,5 @@ public class UserResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String avatarUrl;
     private String bio;
+    private Set<String> roles;
 }

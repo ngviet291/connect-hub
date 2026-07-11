@@ -63,7 +63,7 @@ public class AppUtil {
         return UuidCreator.getTimeOrderedEpoch();
     }
 
-    public static UUID userIdFormAuthentication() {
+    public static UUID userIdFromAuthentication() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {

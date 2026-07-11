@@ -19,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
-
 @RestController
 @RequestMapping("/v1/posts")
 @RequiredArgsConstructor
@@ -29,25 +28,7 @@ public class PostController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<PostResponse> createPost(
-            @RequestParam(required = false) String content,
-            @RequestParam(required = false, defaultValue = "PUBLIC") Visibility visibility,
-            @RequestParam(required = false) UUID parentPostId,
-            @RequestParam(required = false) UUID quotePostId,
-            @RequestParam(required = false) List<String> hashtags,
-            @RequestParam(required = false) List<String> mentionUsernames,
-            @RequestParam(required = false) List<MultipartFile> files) {
-
-        PostRequest request = PostRequest.builder()
-                .content(content)
-                .visibility(visibility)
-                .parentPostId(parentPostId)
-                .quotePostId(quotePostId)
-                .hashtags(hashtags)
-                .mentionUsernames(mentionUsernames)
-                .files(files)
-                .build();
-
+    public ApiResponse<PostResponse> createPost(@ModelAttribute PostRequest request) {
         return ApiResponse.<PostResponse>builder()
                 .code(PostResponseCode.CREATE_POST_SUCCESS.getCode())
                 .message(PostResponseCode.CREATE_POST_SUCCESS.getMessage())
@@ -106,34 +87,10 @@ public class PostController {
                 .build();
     }
 
-    @PostMapping("/{id}/hashtags")
-    public ApiResponse<Void> addHashtagToPost(@PathVariable UUID id,
-                                              @RequestParam String hashtag) {
-        postService.addHashtagToPost(id, hashtag);
-        return ApiResponse.<Void>builder()
-                .code(PostResponseCode.ADD_HASHTAG_SUCCESS.getCode())
-                .message(PostResponseCode.ADD_HASHTAG_SUCCESS.getMessage())
-                .build();
-    }
-
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(value = "/{id}/replies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<PostResponse> createReply(
-            @PathVariable UUID id,
-            @RequestParam(required = false) String content,
-            @RequestParam(required = false, defaultValue = "PUBLIC") Visibility visibility,
-            @RequestParam(required = false) List<String> hashtags,
-            @RequestParam(required = false) List<String> mentionUsernames,
-            @RequestParam(required = false) List<MultipartFile> files) {
-
-        PostRequest request = PostRequest.builder()
-                .content(content)
-                .visibility(visibility)
-                .hashtags(hashtags)
-                .mentionUsernames(mentionUsernames)
-                .files(files)
-                .build();
-
+    public ApiResponse<PostResponse> createReply(@PathVariable UUID id,
+                                                 @ModelAttribute PostRequest request) {
         return ApiResponse.<PostResponse>builder()
                 .code(PostResponseCode.CREATE_REPLY_SUCCESS.getCode())
                 .message(PostResponseCode.CREATE_REPLY_SUCCESS.getMessage())

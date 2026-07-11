@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,8 +24,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(@Param("username") String username);
 
     boolean existsByEmail(String email);
+
     boolean existsByUsername(String username);
+
     boolean existsByPhoneNumber(String phoneNumber);
+
     boolean existsByPhoneNumberAndIdNot(String phoneNumber, UUID id);
 
     @Query("""
@@ -44,23 +48,32 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findAllUsers(@Param("cursor") UUID cursor, Limit limit);
 
     @Query("""
-        SELECT u FROM User u
-        WHERE u.isActive = true
-        AND (
-            LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
-        )
-        AND (:cursor IS NULL OR u.id < :cursor)
-        ORDER BY u.id DESC
-    """)
+                SELECT u FROM User u
+                WHERE u.isActive = true
+                AND (
+                    LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+                AND (:cursor IS NULL OR u.id < :cursor)
+                ORDER BY u.id DESC
+            """)
     List<User> searchByNameOrUsername(@Param("keyword") String keyword,
                                       @Param("cursor") UUID cursor,
                                       Limit limit);
 
     // Tìm chính xác theo username để dùng cho mention
     @Query("""
-        SELECT u FROM User u
-        WHERE LOWER(u.username) = LOWER(TRIM(:username))
-    """)
+                SELECT u FROM User u
+                WHERE LOWER(u.username) = LOWER(TRIM(:username))
+            """)
     Optional<User> findExactByUsername(@Param("username") String username);
+
+    @Query("SELECT u FROM User u WHERE LOWER(u.username) IN :usernames")
+    List<User> findAllByUsernameIn(@Param("usernames") Collection<String> usernames);
+
+    @Query("""
+                SELECT u.id FROM User u
+                WHERE LOWER(u.username) = LOWER(TRIM(:username))
+            """)
+    Optional<UUID> findIdByUsername(String username);
 }
