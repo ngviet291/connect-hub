@@ -15,9 +15,8 @@ import java.util.UUID;
 public interface FollowRepository extends JpaRepository<Follow, UUID> {
 
     Optional<Follow> findByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
-
+    // dùng existsByFollowerIdAndFollowingId để kiểm tra xem một người dùng có đang theo dõi người dùng khác hay không
     boolean existsByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
-
 
     void deleteByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
 

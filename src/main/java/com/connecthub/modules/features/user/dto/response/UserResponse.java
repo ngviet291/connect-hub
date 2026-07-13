@@ -1,7 +1,8 @@
 package com.connecthub.modules.features.user.dto.response;
 
-import com.connecthub.common.util.AppUtil;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,7 @@ public class UserResponse {
     private String avatarUrl;
     private String bio;
     private Set<String> roles;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("isFollowing")
+    private boolean isFollowing;
 }

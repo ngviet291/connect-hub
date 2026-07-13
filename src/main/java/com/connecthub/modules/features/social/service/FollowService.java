@@ -51,7 +51,7 @@ public class FollowService {
 
     @PreAuthorize("hasRole('USER')")
     @Transactional(readOnly = true)
-    public CursorResponse<UserSummaryResponse> getFollowing(String username, UUID cursor, int size) {
+    public CursorResponse<UserSummaryResponse> getFollowers(String username, UUID cursor, int size) {
         UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         UUID userId = userRepository.findIdByUsername(username)
@@ -66,7 +66,7 @@ public class FollowService {
 
     @PreAuthorize("hasRole('USER')")
     @Transactional(readOnly = true)
-    public CursorResponse<UserSummaryResponse> getFollowers(String username, UUID cursor, int size) {
+    public CursorResponse<UserSummaryResponse> getFollowing(String username, UUID cursor, int size) {
         UUID currentUserId = AppUtil.userIdFromAuthentication();
 
         UUID userId = userRepository.findIdByUsername(username)

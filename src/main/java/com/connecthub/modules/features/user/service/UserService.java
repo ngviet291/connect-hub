@@ -71,8 +71,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // ADMIN
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public UserResponse getUserById(UUID id) {
         return userMapper.toUserResponse(getUserByIdOrThrow(id));
@@ -273,13 +272,21 @@ public class UserService {
     @Transactional(readOnly = true)
     public FollowStatsResponse getMyStats() {
         UUID currentUserId = AppUtil.userIdFromAuthentication();
-        return buildUserStats(currentUserId);
+        if (!userRepository.existsById(currentUserId)) {
+            throw new UserNotFoundException();
+        }
+        FollowStatsResponse stats = userRepository.countFollowStats(currentUserId);
+        return stats != null ? stats : FollowStatsResponse.builder().build();
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public FollowStatsResponse getStats(UUID userId) {
-        return buildUserStats(userId);
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException();
+        }
+        FollowStatsResponse stats = userRepository.countFollowStats(userId);
+        return stats != null ? stats : FollowStatsResponse.builder().build();
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -332,14 +339,6 @@ public class UserService {
                 .build();
     }
 
-    private FollowStatsResponse buildUserStats(UUID userId) {
-        // kiểm tra user tồn tại trước khi đếm để tránh trả về 0 cho user không tồn tại
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException();
-        }
-        FollowStatsResponse stats = userRepository.countFollowStats(userId);
-        return stats != null ? stats : new FollowStatsResponse(0L, 0L);
-    }
 
     // block user by id
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -442,8 +441,13 @@ public class UserService {
     @PreAuthorize("hasRole('ROLE_USER')")
     @Transactional(readOnly = true)
     public UserResponse getUserByUsername(String username) {
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(UserNotFoundException::new);
-        return userMapper.toUserResponse(user);
+
+        boolean isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, user.getId());
+
+
+        return userMapper.toUserResponse(user, isFollowing);
     }
 }

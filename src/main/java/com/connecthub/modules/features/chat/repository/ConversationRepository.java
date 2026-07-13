@@ -29,6 +29,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             @Param("userBId") UUID userBId
     );
 
+    @Query("""
+            SELECT c.id FROM Conversation c
+            WHERE c.type = 'PRIVATE'
+              AND EXISTS (SELECT 1 FROM ConversationMember m1 WHERE m1.conversation = c AND m1.user.id = :userAId)
+              AND EXISTS (SELECT 1 FROM ConversationMember m2 WHERE m2.conversation = c AND m2.user.id = :userBId)
+            """)
+    Optional<UUID> findPrivateConversationId(UUID userAId, UUID userBId);
+
     // ConversationRepository
     @Query("""
             SELECT c FROM Conversation c

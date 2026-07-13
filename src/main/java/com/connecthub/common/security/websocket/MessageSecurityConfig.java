@@ -25,6 +25,7 @@ public class MessageSecurityConfig {
 
                 // Subscribe các topic chat — cần authenticated
                 .simpSubscribeDestMatchers("/topic/conversations/**").authenticated()  // ← THÊM
+                .simpSubscribeDestMatchers("/topic/conversation/**").authenticated()  // ← THÊM
                 .simpSubscribeDestMatchers("/user/queue/**").authenticated()
                 .simpSubscribeDestMatchers("/topic/orders/**").authenticated()
 

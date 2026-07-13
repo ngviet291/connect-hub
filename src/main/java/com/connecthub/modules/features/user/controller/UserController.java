@@ -15,7 +15,6 @@ import com.connecthub.modules.features.user.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,9 +53,8 @@ public class UserController {
                 .data(userService.getAllUsers(cursor, size))
                 .build();
     }
-    // ADMIN ONLY
-    @GetMapping("/admin/users/{id}")
-    public ApiResponse<UserResponse> getUser(@PathVariable UUID id) {
+    @GetMapping("/users/{id}")
+    public ApiResponse<UserResponse> getUserById(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.GET_USER_SUCCESS.getCode())
                 .message(UserResponseCode.GET_USER_SUCCESS.getMessage())

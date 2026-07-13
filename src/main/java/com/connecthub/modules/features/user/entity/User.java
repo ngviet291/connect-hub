@@ -53,10 +53,10 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @OneToMany(mappedBy = "follower")
+    @OneToMany(mappedBy = "following")
     private Set<Follow> followers;
 
-    @OneToMany(mappedBy = "following")
+    @OneToMany(mappedBy = "follower")
     private Set<Follow> following;
 
     @OneToMany(mappedBy = "blocked", cascade = CascadeType.ALL, orphanRemoval = true)

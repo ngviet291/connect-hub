@@ -4,6 +4,7 @@ import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.chat.dto.request.*;
 import com.connecthub.modules.features.chat.dto.response.ConversationDetailResponse;
+import com.connecthub.modules.features.chat.dto.response.ConversationExistsResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResponse;
 import com.connecthub.modules.features.chat.enums.ChatResponseCode;
 import com.connecthub.modules.features.chat.enums.MemberStatus;
@@ -102,6 +103,16 @@ public class ConversationController {
                 .code(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getCode())
                 .message(ChatResponseCode.UPDATE_CONVERSATION_SUCCESS.getMessage())
                 .data(conversationService.updateMemberRole(conversationId, memberId, request))
+                .build();
+    }
+
+    // ConversationController
+    @GetMapping("/private/{peerId}/exists")
+    public ApiResponse<ConversationExistsResponse> checkPrivateConversationExists(@PathVariable UUID peerId) {
+        return ApiResponse.<ConversationExistsResponse>builder()
+                .code(ChatResponseCode.CHECK_PRIVATE_CONVERSATION_SUCCESS.getCode())
+                .message(ChatResponseCode.CHECK_PRIVATE_CONVERSATION_SUCCESS.getMessage())
+                .data(conversationService.findPrivateConversationId(peerId))
                 .build();
     }
 }

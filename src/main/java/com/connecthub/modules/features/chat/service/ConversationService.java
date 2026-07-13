@@ -12,6 +12,7 @@ import com.connecthub.modules.features.chat.dto.request.AddMembersRequest;
 import com.connecthub.modules.features.chat.dto.request.CreateGroupConversationRequest;
 import com.connecthub.modules.features.chat.dto.request.UpdateMemberRoleRequest;
 import com.connecthub.modules.features.chat.dto.response.ConversationDetailResponse;
+import com.connecthub.modules.features.chat.dto.response.ConversationExistsResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationMemberResponse;
 import com.connecthub.modules.features.chat.dto.response.ConversationSummaryResponse;
 import com.connecthub.modules.features.chat.entity.Conversation;
@@ -535,5 +536,16 @@ public class ConversationService {
             throw new InvalidTypeConversionException(ConversationType.GROUP);
         }
         return member;
+    }
+
+
+    public ConversationExistsResponse findPrivateConversationId(UUID peerId) {
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
+        if (peerId.equals(currentUserId)) {
+            throw new InvalidChatRequestException();
+        }
+        UUID conversationId = conversationRepository
+                .findPrivateConversationId(currentUserId, peerId).orElse(null);
+        return ConversationExistsResponse.builder().conversationId(conversationId).build();
     }
 }
