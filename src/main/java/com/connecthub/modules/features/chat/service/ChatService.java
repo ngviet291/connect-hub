@@ -88,16 +88,18 @@ public class ChatService {
         }
 
         MediaType type = resolveMediaType(file.getContentType());
+        String folder = "message-media";
 
         try {
-            // Upload y hệt cách ConversationService đang lưu avatar
-            UploadMediaResponse uploadResponse = mediaStorageService
-                    .uploadImage(file.getBytes(), "message-media-" + AppUtil.generateUUID())
-                    .join();
+            UploadMediaResponse uploadResponse = switch (type) {
+                case VIDEO -> mediaStorageService.uploadVideo(file.getBytes(), folder).join();
+                default -> mediaStorageService.uploadImage(file.getBytes(), folder).join();
+            };
 
             return MediaUploadResponse.builder()
                     .url(uploadResponse.getUrl())
                     .type(type)
+                    .publicId(uploadResponse.getPublicId())
                     .fileName(file.getOriginalFilename())
                     .size(file.getSize())
                     .build();
@@ -105,7 +107,6 @@ public class ChatService {
             throw new UploadMediaException();
         }
     }
-
     private MediaType resolveMediaType(String contentType) {
         if (contentType == null) return MediaType.IMAGE; // fallback mặc định
         if (contentType.startsWith("image/")) return MediaType.IMAGE;

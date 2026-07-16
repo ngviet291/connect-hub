@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.chat.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
+import com.connecthub.common.service.MediaStorageService;
 import com.connecthub.common.service.WebSocketService;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
@@ -44,6 +45,7 @@ public class MessageService {
     private final ConversationMemberRepository conversationMemberRepository;
     private final ConversationRepository conversationRepository;
     private final MessageMapper messageMapper;
+    private final MediaStorageService mediaStorageService;
 
     @Transactional
     public Message saveMessage(Conversation conversation, User user, SendMessageRequest request) {
@@ -68,6 +70,7 @@ public class MessageService {
                     .map(mediaRequest -> MessageMedia.builder()
                             .id(AppUtil.generateUUID())
                             .message(message)
+                            .publicId(mediaRequest.getPublicId())
                             .url(mediaRequest.getUrl())
                             .type(mediaRequest.getType())
                             .build())
@@ -88,6 +91,15 @@ public class MessageService {
 
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new MessageNotFoundException(messageId.toString()));
+
+        // xóa hình ảnh nếu có
+        if (message.getMessageMedia() != null) {
+            message.getMessageMedia().forEach(media -> {
+                mediaStorageService.delete(media.getPublicId());
+            });
+            messageMediaRepository.deleteAll(message.getMessageMedia());
+        }
+
         message.setDeleted(true);
         message.setDeletedAt(LocalDateTime.now());
         message.setDeletedBy(user);

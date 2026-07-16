@@ -25,4 +25,6 @@ public class MessageMedia extends BaseEntity {
     private String url;
     @Enumerated(EnumType.STRING)
     private MediaType type;
+
+    private String publicId;
 }

@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class MediaUploadResponse {
     private String url;
+    private String publicId;
     private MediaType type;
     private String fileName;
     private Long size;

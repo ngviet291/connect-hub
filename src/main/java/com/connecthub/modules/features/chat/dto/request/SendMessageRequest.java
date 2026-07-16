@@ -46,6 +46,8 @@ public class SendMessageRequest {
 
         private String fileName;
 
+        private String publicId;
+
         @NotNull(message = "error.message.media_size_required")
         private Long size;
     }
