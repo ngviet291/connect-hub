@@ -57,7 +57,6 @@ public class ChatService {
     @Transactional
     @PreAuthorize("hasRole('USER')")
     public MessageResponse sendMessage(SendMessageRequest request) {
-        validateContentPresent(request);
         UUID senderId = AppUtil.userIdFromAuthentication();
 
         if (request.getConversationId() != null) {
@@ -114,15 +113,20 @@ public class ChatService {
         }
 
         Message message = messageService.saveMessage(conversation, sender, request);
+        UUID recipientId = conversation.getConversationMembers().stream()
+                .map(cm -> cm.getUser().getId())
+                .filter(memberId -> !memberId.equals(sender.getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Conversation has no recipient"));
 
         MemberStatus recipientStatus = resolveAndMaybePromoteRecipientStatus(
-                conversation, sender, request.getRecipientId()
+                conversation, sender, recipientId
         );
 
         MessageResponse response = messageMapper.toResponse(
                 message, message.getSender(), conversation, recipientStatus, MessageStatus.SENT
         );
-        pushToRecipient(conversation, request.getRecipientId(), recipientStatus, response);
+        pushToRecipient(conversation,recipientId, recipientStatus, response);
         return response;
     }
 
@@ -187,7 +191,7 @@ public class ChatService {
     }
 
     private void pushToRecipient(Conversation conversation, UUID recipientId, MemberStatus status, MessageResponse response) {
-
+        log.info("Pushing message to recipient {} with status {}", recipientId, status);
         if (status == MemberStatus.ACCEPTED) {
             webSocketService.pushMessage(recipientId, response, conversation.getType());
         } else {

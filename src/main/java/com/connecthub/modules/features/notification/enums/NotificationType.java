@@ -10,5 +10,6 @@ public enum NotificationType {
     SYSTEM,
     REPOST,
     MESSAGE_PENDING,
+    CREATED_GROUP
 
 }

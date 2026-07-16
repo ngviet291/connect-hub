@@ -29,14 +29,17 @@ import com.connecthub.modules.features.chat.repository.ConversationMemberReposit
 import com.connecthub.modules.features.chat.repository.ConversationRepository;
 import com.connecthub.modules.features.chat.repository.MessageReceiptRepository;
 import com.connecthub.modules.features.chat.repository.MessageRepository;
+import com.connecthub.modules.features.notification.dto.request.NotificationRequest;
+import com.connecthub.modules.features.notification.dto.response.NotificationUserSummaryResponse;
+import com.connecthub.modules.features.notification.enums.NotificationType;
+import com.connecthub.modules.features.notification.event.NotificationEvent;
+import com.connecthub.modules.features.notification.service.NotificationService;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.exception.UserNotFoundException;
 import com.connecthub.modules.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +60,8 @@ public class ConversationService {
     private final UserRepository userRepository;
     private final MediaStorageService mediaStorageService;
     private final WebSocketService webSocketService;
-
+    private final NotificationService notificationService;
+    private static final String NOTIFICATION_CONTENT_TEMPLATE = "Bạn đã được thêm vào nhóm %s";
     @Value("${app.chat.group.max-members:100}")
     private String MAX_GROUP_MEMBERS;
 
@@ -352,7 +356,20 @@ public class ConversationService {
 
         conversation.setConversationMembers(conversationMembers);
         conversationRepository.save(conversation);
-
+        for (User member : otherUsers) {
+            notificationService.pushNotification(NotificationEvent.builder()
+                    .recipientId(member.getId())
+                    .content(String.format(NOTIFICATION_CONTENT_TEMPLATE, groupName))
+                    .actor(NotificationUserSummaryResponse.builder()
+                            .id(adminUser.getId())
+                            .username(adminUser.getUsername())
+                            .avatarUrl(adminUser.getAvatarUrl())
+                            .build())
+                    .entityId(conversation.getId())
+                    .type(NotificationType.CREATED_GROUP)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+        }
         return toSummaryResponse(conversation, currentUserId, null);
     }
 
