@@ -13,7 +13,8 @@ public enum ChatResponseCode {
     GET_MESSAGES_SUCCESS(200, "success.chat.get_messages"),
     SEND_MESSAGE_SUCCESS(201, "success.chat.send_message"),
     ADD_MEMBER_SUCCESS(200, "success.chat.add_member"),
-    CHECK_PRIVATE_CONVERSATION_SUCCESS(200, "success.chat.check_private_conversation")
+    CHECK_PRIVATE_CONVERSATION_SUCCESS(200, "success.chat.check_private_conversation"),
+    UPLOAD_MESSAGE_MEDIA_SUCCESS(201, "success.chat.upload_message_media")
 
     ;
 

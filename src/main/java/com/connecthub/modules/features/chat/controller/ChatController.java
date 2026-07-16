@@ -3,6 +3,7 @@ package com.connecthub.modules.features.chat.controller;
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
+import com.connecthub.modules.features.chat.dto.response.MediaUploadResponse;
 import com.connecthub.modules.features.chat.dto.response.MessageResponse;
 import com.connecthub.modules.features.chat.enums.ChatResponseCode;
 import com.connecthub.modules.features.chat.service.ChatService;
@@ -11,7 +12,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,7 +32,15 @@ public class ChatController {
                 .code(ChatResponseCode.SEND_MESSAGE_SUCCESS.getCode())
                 .build();
     }
-
+    @PostMapping(value = "/messages/media", consumes = "multipart/form-data")
+    public ApiResponse<List<MediaUploadResponse>> uploadMessageMedia(
+            @RequestParam("files") List<MultipartFile> files) {
+        return ApiResponse.<List<MediaUploadResponse>>builder()
+                .code(ChatResponseCode.UPLOAD_MESSAGE_MEDIA_SUCCESS.getCode())
+                .message(ChatResponseCode.UPLOAD_MESSAGE_MEDIA_SUCCESS.getMessage())
+                .data(chatService.uploadMessageMedia(files))
+                .build();
+    }
     @PutMapping("/{conversationId}/read")
     public ApiResponse<Void> markAsRead(
             @PathVariable UUID conversationId,

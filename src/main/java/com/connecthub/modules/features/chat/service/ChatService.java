@@ -1,6 +1,12 @@
 package com.connecthub.modules.features.chat.service;
 
-import com.connecthub.common.dto.response.CursorResponse;
+import com.connecthub.common.dto.response.UploadMediaResponse;
+import com.connecthub.common.exception.UploadMediaException;
+import com.connecthub.common.service.MediaStorageService;
+import com.connecthub.modules.features.chat.dto.response.MediaUploadResponse;
+import com.connecthub.modules.features.post.enums.MediaType;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
 import com.connecthub.common.service.WebSocketService;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.dto.request.SendMessageRequest;
@@ -41,7 +47,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Service
 public class ChatService {
+    private final MediaStorageService mediaStorageService;
 
+    @Value("${app.chat.media.max-size-bytes:26214400}") // 25MB, chỉnh theo config thật
+    private long maxMediaSizeBytes;
     private final ConversationRepository conversationRepository;
     private final FollowService followService;
     private final MessageMapper messageMapper;
@@ -53,6 +62,56 @@ public class ChatService {
     private final UserBlockService userBlockService;
     private final NotificationService notificationService;
     private final MessageRepository messageRepository;
+
+
+
+    @PreAuthorize("hasRole('USER')")
+    public List<MediaUploadResponse> uploadMessageMedia(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new MediaFileRequiredException();
+        }
+        if (files.size() > 10) { // đồng bộ @Size(max = 10) của SendMessageRequest.media
+            throw new MediaLimitExceededException();
+        }
+
+        return files.stream()
+                .map(this::uploadSingleMedia)
+                .toList();
+    }
+
+    private MediaUploadResponse uploadSingleMedia(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new MediaFileRequiredException();
+        }
+        if (file.getSize() > maxMediaSizeBytes) {
+            throw new MediaLimitExceededException();
+        }
+
+        MediaType type = resolveMediaType(file.getContentType());
+
+        try {
+            // Upload y hệt cách ConversationService đang lưu avatar
+            UploadMediaResponse uploadResponse = mediaStorageService
+                    .uploadImage(file.getBytes(), "message-media-" + AppUtil.generateUUID())
+                    .join();
+
+            return MediaUploadResponse.builder()
+                    .url(uploadResponse.getUrl())
+                    .type(type)
+                    .fileName(file.getOriginalFilename())
+                    .size(file.getSize())
+                    .build();
+        } catch (Exception e) {
+            throw new UploadMediaException();
+        }
+    }
+
+    private MediaType resolveMediaType(String contentType) {
+        if (contentType == null) return MediaType.IMAGE; // fallback mặc định
+        if (contentType.startsWith("image/")) return MediaType.IMAGE;
+        if (contentType.startsWith("video/")) return MediaType.VIDEO;
+        return MediaType.IMAGE; // TODO: đổi theo đúng constant thật của MediaType (FILE/DOCUMENT/AUDIO...)
+    }
 
     @Transactional
     @PreAuthorize("hasRole('USER')")
@@ -131,14 +190,6 @@ public class ChatService {
     }
 
     // ── helpers ──────────────────────────────────────────────────────────
-
-    private void validateContentPresent(SendMessageRequest request) {
-        boolean noContent = request.getContent() == null;
-        boolean noMedia = request.getMedia() == null || request.getMedia().isEmpty();
-        if (noContent && noMedia) {
-            throw new InvalidChatRequestException();
-        }
-    }
 
     private void validateNotBlocked(UUID senderId, UUID recipientId) {
         if (userBlockService.isBlockedBy(senderId, recipientId)) {

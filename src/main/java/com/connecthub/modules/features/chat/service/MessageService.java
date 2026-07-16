@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,11 +73,9 @@ public class MessageService {
                             .build())
                     .toList();
             messageMediaRepository.saveAll(mediaList);
+            message.setMessageMedia(new HashSet<>(mediaList)); // <-- thêm dòng này
         }
 
-        // Không tạo MessageReceipt ở đây. SENT được suy ra từ việc Message
-        // tồn tại; DELIVERED ghi đúng lúc push WS thành công (xem
-        // DeliveryTrackingService.markDelivered), không phải lúc gửi.
         return message;
     }
 
