@@ -200,7 +200,7 @@ public class UserController {
                 .build();
     }
     //  api này dùng để bỏ chặn người dùng
-    @DeleteMapping("/users/{id}/block")
+    @DeleteMapping("/users/{id}/unblock")
     public ApiResponse<UserResponse> unblockUser(@PathVariable UUID id) {
         return ApiResponse.<UserResponse>builder()
                 .code(UserResponseCode.UNBLOCK_USER_SUCCESS.getCode())
