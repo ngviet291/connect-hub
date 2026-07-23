@@ -382,19 +382,20 @@ public class UserService {
     public UserResponse unblockUser(UUID id) {
         UUID currentUserId = AppUtil.userIdFromAuthentication();
 
-        // Kiểm tra sự tồn tại của user bị chặn
         User blockedUser = userRepository.findById(id)
                 .orElseThrow(UserNotFoundException::new);
-        // kiểm tra xem có block hay k
-        boolean isBlock = userBlockRepository.existsByBlockedIdAndBlockerId(currentUserId, id);
+
+        boolean isBlock =
+                userBlockRepository.existsByBlockedIdAndBlockerId(id, currentUserId);
+
         if (!isBlock) {
             throw new UserNotBlockedException();
         }
-        // Xóa mối quan hệ block
+
         userBlockRepository.deleteByBlockedIdAndBlockerId(id, currentUserId);
+
         return userMapper.toUserResponse(blockedUser);
     }
-
     @PreAuthorize("hasRole('ROLE_USER')")
     // get list blocked users by current user(lấy danh sách người dùng bị chặn bởi người dùng hiện tại)
     @Transactional(readOnly = true)
