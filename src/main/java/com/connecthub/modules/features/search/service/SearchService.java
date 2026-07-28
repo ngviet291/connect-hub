@@ -42,16 +42,6 @@ public class SearchService {
     private final RepostRepository repostRepository;
     private final BookmarkRepository bookmarkRepository;
 
-    // Giống hệt helper bên PostService/MentionService/BookmarkService — query 1 lần
-    // loại reaction của user hiện tại cho cả batch postId. Trả Map rỗng nếu list rỗng.
-    private Map<UUID, ReactionType> findMyReactionTypes(UUID userId, List<UUID> postIds) {
-        if (postIds.isEmpty()) return Map.of();
-        return reactionRepository.findMyReactionTypes(userId, postIds).stream()
-                .collect(Collectors.toMap(
-                        MyReactionProjection::getPostId,
-                        MyReactionProjection::getType));
-    }
-
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
     public CursorResponse<UserSummaryResponse> searchUsers(String keyword, UUID cursor, int size) {
@@ -96,22 +86,34 @@ public class SearchService {
         // Endpoint này có @PreAuthorize -> luôn có user đăng nhập, không cần
         // check null như getPost(). Batch 1 lần cho cả trang kết quả tìm kiếm.
         UUID userId = AppUtil.userIdFromAuthentication();
-        List<UUID> pageIds = posts.stream().map(Post::getId).toList();
+        List<UUID> pageIds = posts.stream()
+                .map(Post::getId)
+                .toList();
 
-        Map<UUID, ReactionType> myReactionByPostId = findMyReactionTypes(userId, pageIds);
-        Set<UUID> repostedIds   = repostRepository.findRepostedPostIds(userId, pageIds);
-        Set<UUID> bookmarkedIds = bookmarkRepository.findBookmarkedPostIds(userId, pageIds);
+        Map<UUID, ReactionType> myReactionByPostId =
+                reactionRepository.findMyReactionTypes(userId, pageIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                MyReactionProjection::getPostId,
+                                MyReactionProjection::getType
+                        ));
 
+        Set<UUID> repostedIds =
+                repostRepository.findRepostedPostIds(userId, pageIds);
+
+        Set<UUID> bookmarkedIds =
+                bookmarkRepository.findBookmarkedPostIds(userId, pageIds);
         return AppUtil.buildCursorResponse(
                 posts,
                 size,
                 Post::getId,
                 p -> postMapper.mapToResponse(
                         p,
-                        myReactionByPostId.get(p.getId()), // null nếu chưa react
+                        myReactionByPostId.get(p.getId()),
                         repostedIds.contains(p.getId()),
                         bookmarkedIds.contains(p.getId())
-                ));
+                )
+        );
     }
 
     @Transactional(readOnly = true)
@@ -155,11 +157,6 @@ public class SearchService {
                 content,
                 size,
                 HashtagSearchResponse::getId,
-                // Function.identity() = x -> x
-                // Dùng khi không cần map sang object khác.
-                // Ở đây:
-                // HashtagSearchResponse -> HashtagSearchResponse
-                // nên chỉ trả về chính object đó.
                 Function.identity());
     }
 

@@ -30,7 +30,7 @@ public class User extends BaseEntity {
     private UUID id;
 
     @Column(unique = true, nullable = false)
-    private String username;
+        private String username;
 
     @Column(unique = true, nullable = false)
     private String email;
