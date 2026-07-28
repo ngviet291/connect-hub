@@ -73,6 +73,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         SELECT p.id FROM Post p
         WHERE p.visibility = 'PUBLIC'
         AND p.isDeleted = false
+        AND p.parentPost IS NULL
         AND (:cursor IS NULL OR p.id < :cursor)
         ORDER BY p.id DESC
     """)
@@ -195,4 +196,59 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     Optional<Post> findByIdAndUserIdWithDetails(@Param("postId") UUID postId, @Param("userId") UUID userId);
     Optional<Post> findByIdAndIsDeletedFalse(UUID id);
     boolean existsByIdAndIsDeletedFalse(UUID id);
+    @Query("""
+        SELECT p.id FROM Post p
+        WHERE p.user.username = :username
+        AND p.parentPost IS NULL
+        AND p.isDeleted = false
+        AND (
+            p.visibility = 'PUBLIC'
+            OR (:currentUserId IS NOT NULL AND p.user.id = :currentUserId)
+        )
+        AND (:cursor IS NULL OR p.id < :cursor)
+        ORDER BY p.id DESC
+    """)
+    List<UUID> findUserPostIds(@Param("username") String username,
+                               @Param("currentUserId") UUID currentUserId,
+                               @Param("cursor") UUID cursor,
+                               Limit limit);
+    // Replies của 1 user cụ thể — reply CHÍNH LÀ 1 Post có parentPost khác null.
+    // Cùng rule visibility như findUserPostIds: PUBLIC cho tất cả, còn lại chỉ
+    // chính chủ profile thấy khi xem trang mình.
+    @Query("""
+        SELECT p.id FROM Post p
+        WHERE p.user.username = :username
+        AND p.parentPost IS NOT NULL
+        AND p.isDeleted = false
+        AND (
+            p.visibility = 'PUBLIC'
+            OR (:currentUserId IS NOT NULL AND p.user.id = :currentUserId)
+        )
+        AND (:cursor IS NULL OR p.id < :cursor)
+        ORDER BY p.id DESC
+    """)
+    List<UUID> findUserReplyIds(@Param("username") String username,
+                                @Param("currentUserId") UUID currentUserId,
+                                @Param("cursor") UUID cursor,
+                                Limit limit);
+
+    // Bài viết có đính kèm media (ảnh/video) của 1 user cụ thể — dùng cho tab "File phương tiện".
+    // `p.media IS NOT EMPTY` dịch ra EXISTS subquery, không cần JOIN FETCH ở query IDs này
+    // (giống các query IDs khác trong file, JOIN FETCH thật để ở findAllWithDetailsByIds).
+    @Query("""
+        SELECT p.id FROM Post p
+        WHERE p.user.username = :username
+        AND p.media IS NOT EMPTY
+        AND p.isDeleted = false
+        AND (
+            p.visibility = 'PUBLIC'
+            OR (:currentUserId IS NOT NULL AND p.user.id = :currentUserId)
+        )
+        AND (:cursor IS NULL OR p.id < :cursor)
+        ORDER BY p.id DESC
+    """)
+    List<UUID> findUserMediaPostIds(@Param("username") String username,
+                                    @Param("currentUserId") UUID currentUserId,
+                                    @Param("cursor") UUID cursor,
+                                    Limit limit);
 }

@@ -80,6 +80,7 @@ public interface PostMapper {
                 .content(post.getContent())
                 .visibility(post.getVisibility())
                 .parentPostId(post.getParentPost() != null ? post.getParentPost().getId() : null)
+                .parentPost(post.getParentPost() != null ? toQuotePostResponse(post.getParentPost()) : null)
                 .quotePost(post.getQuotePost() != null ? toQuotePostResponse(post.getQuotePost()) : null)
                 .media(mapMedia(post.getMedia()))
                 .hashtags(mapHashtags(post.getPostHashtags()))

@@ -3,6 +3,7 @@ package com.connecthub.modules.features.post.service;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.post.dto.projection.MyReactionProjection;
+import com.connecthub.modules.features.post.dto.projection.RepostedPostIdProjection;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.request.UpdatePostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
@@ -204,5 +205,68 @@ public class PostService {
     private void checkPostExistsOrThrow(UUID postId) {
         if (!postRepository.existsByIdAndIsDeletedFalse(postId))
             throw new PostNotFoundException();
+    }
+    @Transactional(readOnly = true)
+    public CursorResponse<PostResponse> getUserPosts(String username, UUID cursor, int size) {
+
+        UUID currentUserId = AppUtil.currentUserIdOrNull();
+        List<UUID> ids = postRepository.findUserPostIds(username, currentUserId, cursor, Limit.of(size + 1));
+        return fetchPagedPosts(ids, size);
+    }
+    @Transactional(readOnly = true)
+    public CursorResponse<PostResponse> getUserReplies(String username, UUID cursor, int size) {
+        UUID currentUserId = AppUtil.currentUserIdOrNull();
+        List<UUID> ids = postRepository.findUserReplyIds(username, currentUserId, cursor, Limit.of(size + 1));
+        return fetchPagedPosts(ids, size);
+    }
+
+    @Transactional(readOnly = true)
+    public CursorResponse<PostResponse> getUserMedia(String username, UUID cursor, int size) {
+        UUID currentUserId = AppUtil.currentUserIdOrNull();
+        List<UUID> ids = postRepository.findUserMediaPostIds(username, currentUserId, cursor, Limit.of(size + 1));
+        return fetchPagedPosts(ids, size);
+    }
+
+    @Transactional(readOnly = true)
+    public CursorResponse<PostResponse> getUserReposts(String username, UUID cursor, int size) {
+        UUID currentUserId = AppUtil.currentUserIdOrNull();
+
+        List<RepostedPostIdProjection> rows =
+                repostRepository.findUserRepostedPostIds(username, currentUserId, cursor, Limit.of(size + 1));
+
+        boolean hasNext = rows.size() > size;
+        List<RepostedPostIdProjection> page = hasNext ? rows.subList(0, size) : rows;
+
+        if (page.isEmpty()) {
+            return CursorResponse.<PostResponse>builder()
+                    .content(Collections.emptyList()).hasNext(false).nextCursor(null).build();
+        }
+
+        List<UUID> postIds = page.stream().map(RepostedPostIdProjection::getPostId).toList();
+
+        Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(postIds).stream()
+                .collect(Collectors.toMap(Post::getId, p -> p, (existing, replacement) -> existing));
+
+        Map<UUID, ReactionType> myReactionByPostId = findMyReactionTypes(currentUserId, postIds);
+        Set<UUID> bookmarkedIds = currentUserId == null ? Set.of() : bookmarkRepository.findBookmarkedPostIds(currentUserId, postIds);
+
+        List<PostResponse> content = page.stream()
+                .map(row -> postMap.get(row.getPostId()))
+                .filter(Objects::nonNull)
+                .map(p -> postMapper.mapToResponse(
+                        p,
+                        myReactionByPostId.get(p.getId()),
+                        true,
+                        bookmarkedIds.contains(p.getId())
+                ))
+                .toList();
+
+        UUID nextCursor = hasNext ? page.getLast().getRepostId() : null;
+
+        return CursorResponse.<PostResponse>builder()
+                .content(content)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor == null ? null : nextCursor.toString())
+                .build();
     }
 }

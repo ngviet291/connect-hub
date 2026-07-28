@@ -24,7 +24,7 @@ public class PostResponse {
     private UUID parentPostId;
 
     private QuotePostResponse quotePost;
-
+    private QuotePostResponse parentPost;
     private List<MediaResponse> media;
     private List<String> hashtags;
     private List<UserSummaryResponse> mentions;

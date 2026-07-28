@@ -109,4 +109,50 @@ public class PostController {
                 .data(postService.getReplies(id, cursor, limit))
                 .build();
     }
+    @GetMapping("/users/{username}")
+    public ApiResponse<CursorResponse<PostResponse>> getUserPosts(
+            @PathVariable String username,
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.<CursorResponse<PostResponse>>builder()
+                .code(PostResponseCode.GET_USER_POSTS_SUCCESS.getCode())
+                .message(PostResponseCode.GET_USER_POSTS_SUCCESS.getMessage())
+                .data(postService.getUserPosts(username, cursor, limit))
+                .build();
+    }
+    @GetMapping("/users/{username}/replies")
+    public ApiResponse<CursorResponse<PostResponse>> getUserReplies(
+            @PathVariable String username,
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.<CursorResponse<PostResponse>>builder()
+                .code(PostResponseCode.GET_USER_REPLIES_SUCCESS.getCode())
+                .message(PostResponseCode.GET_USER_REPLIES_SUCCESS.getMessage())
+                .data(postService.getUserReplies(username, cursor, limit))
+                .build();
+    }
+
+    @GetMapping("/users/{username}/media")
+    public ApiResponse<CursorResponse<PostResponse>> getUserMedia(
+            @PathVariable String username,
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.<CursorResponse<PostResponse>>builder()
+                .code(PostResponseCode.GET_USER_MEDIA_SUCCESS.getCode())
+                .message(PostResponseCode.GET_USER_MEDIA_SUCCESS.getMessage())
+                .data(postService.getUserMedia(username, cursor, limit))
+                .build();
+    }
+
+    @GetMapping("/users/{username}/reposts")
+    public ApiResponse<CursorResponse<PostResponse>> getUserReposts(
+            @PathVariable String username,
+            @RequestParam(required = false) UUID cursor,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.<CursorResponse<PostResponse>>builder()
+                .code(PostResponseCode.GET_USER_REPOSTS_SUCCESS.getCode())
+                .message(PostResponseCode.GET_USER_REPOSTS_SUCCESS.getMessage())
+                .data(postService.getUserReposts(username, cursor, limit))
+                .build();
+    }
 }

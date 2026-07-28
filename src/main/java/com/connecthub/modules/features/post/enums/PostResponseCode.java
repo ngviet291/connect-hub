@@ -21,7 +21,12 @@ public enum PostResponseCode {
     UPLOAD_MEDIA_SUCCESS("success.post.upload_media", 2014),
     GET_POST_MENTIONS_SUCCESS("success.post.get_mentions", 2015),
     GET_MY_MENTIONS_SUCCESS("success.mention.get_my", 2016),
-    UNBOOKMARK_SUCCESS("success.post.unbookmark", 2017);
+    UNBOOKMARK_SUCCESS("success.post.unbookmark", 2017),
+    GET_USER_POSTS_SUCCESS("success.post.get_user_posts", 2018),
+    GET_USER_REPLIES_SUCCESS("success.post.get_user_replies", 2019),
+    GET_USER_REPOSTS_SUCCESS("success.post.get_user_reposts", 2020),
+    GET_USER_MEDIA_SUCCESS("success.post.get_user_media", 2021);
+
     private final String message;
     private final int code;
 
