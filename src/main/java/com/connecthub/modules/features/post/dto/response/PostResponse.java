@@ -1,5 +1,6 @@
 package com.connecthub.modules.features.post.dto.response;
 
+import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.post.enums.Visibility;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import lombok.*;
@@ -27,7 +28,7 @@ public class PostResponse {
     private List<MediaResponse> media;
     private List<String> hashtags;
     private List<UserSummaryResponse> mentions;
-
+    private ReactionType myReactionType;
     private int reactionCount;
     private int commentCount;
     private int repostCount;

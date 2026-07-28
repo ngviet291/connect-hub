@@ -45,20 +45,17 @@ public class PostWriteService {
         Post savedPost = postRepository.save(post);
 
         if (!uploadedMedia.isEmpty())
-            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getMedia().addAll(
                     mediaService.attachToPost(uploadedMedia, savedPost));
         if (request.getHashtags() != null && !request.getHashtags().isEmpty())
-            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getPostHashtags().addAll(
                     hashtagService.addHashtagsToPost(savedPost, request.getHashtags()));
         if (request.getMentionUsernames() != null && !request.getMentionUsernames().isEmpty())
-            //addAll giữ object collection cũ, chỉ thêm phần tử vào
             savedPost.getMentions().addAll(
                     mentionService.addMentionsByUsername(savedPost, request.getMentionUsernames()));
 
         log.info("Post created: {} by user: {}", savedPost.getId(), userId);
-        return postMapper.mapToResponse(savedPost);
+        return postMapper.mapToResponseForNewPost(savedPost);
     }
 
     private User getUserOrThrow(UUID userId) {

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -31,4 +32,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, UUID> {
             @Param("userId") UUID userId,
             @Param("cursor") UUID cursor,
             Limit limit);
+    @Query("SELECT b.post.id FROM Bookmark b WHERE b.user.id = :userId AND b.post.id IN :postIds")
+    Set<UUID> findBookmarkedPostIds(@Param("userId") UUID userId, @Param("postIds") List<UUID> postIds);
+    boolean existsByPostIdAndUserId(UUID postId, UUID userId);
 }

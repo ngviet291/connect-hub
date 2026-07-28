@@ -42,6 +42,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         LEFT JOIN FETCH p.media
         LEFT JOIN FETCH p.user
         LEFT JOIN FETCH p.quotePost qp
+        LEFT JOIN FETCH p.parentPost pp
         LEFT JOIN FETCH qp.media
         LEFT JOIN FETCH qp.user
         LEFT JOIN FETCH p.postHashtags ph

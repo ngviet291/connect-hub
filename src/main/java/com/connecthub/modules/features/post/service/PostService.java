@@ -2,11 +2,13 @@ package com.connecthub.modules.features.post.service;
 
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.post.dto.projection.MyReactionProjection;
 import com.connecthub.modules.features.post.dto.request.PostRequest;
 import com.connecthub.modules.features.post.dto.request.UpdatePostRequest;
 import com.connecthub.modules.features.post.dto.response.PostResponse;
 import com.connecthub.modules.features.post.dto.response.UploadedMedia;
 import com.connecthub.modules.features.post.entity.*;
+import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.post.exception.HashtagNotFoundException;
 import com.connecthub.modules.features.post.exception.PostAccessDeniedException;
 import com.connecthub.modules.features.post.exception.PostNotFoundException;
@@ -36,12 +38,30 @@ public class PostService {
     private final HashtagService hashtagService;
     private final MentionService mentionService;
     private final PostWriteService postWriteService;
+    private final ReactionRepository reactionRepository;
+    private final RepostRepository repostRepository;
+    private final BookmarkRepository bookmarkRepository;
+
+    private UUID currentUserIdOrNull() {
+        try {
+            return AppUtil.userIdFromAuthentication();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Map<UUID, ReactionType> findMyReactionTypes(UUID userId, List<UUID> postIds) {
+        if (userId == null || postIds.isEmpty()) return Map.of();
+        return reactionRepository.findMyReactionTypes(userId, postIds).stream()
+                .collect(Collectors.toMap(
+                        MyReactionProjection::getPostId,
+                        MyReactionProjection::getType));
+    }
 
     @PreAuthorize("hasRole('ROLE_USER')")
     public PostResponse createPost(PostRequest request) {
         UUID userId = AppUtil.userIdFromAuthentication();
 
-        // I/O thuần (upload file lên storage), KHÔNG nằm trong transaction
         List<UploadedMedia> uploadedMedia =
                 (request.getFiles() != null && !request.getFiles().isEmpty())
                         ? mediaService.uploadFiles(request.getFiles())
@@ -53,9 +73,17 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostResponse getPost(UUID postId) {
-        return postMapper.mapToResponse(
-                postRepository.findByIdWithDetails(postId)
-                        .orElseThrow(PostNotFoundException::new));
+        Post post = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(PostNotFoundException::new);
+
+        UUID userId = currentUserIdOrNull();
+        List<UUID> ids = List.of(postId);
+
+        ReactionType myReactionType = findMyReactionTypes(userId, ids).get(postId);
+        boolean bookmarked = userId != null && !bookmarkRepository.findBookmarkedPostIds(userId, ids).isEmpty();
+        boolean reposted   = userId != null && !repostRepository.findRepostedPostIds(userId, ids).isEmpty();
+
+        return postMapper.mapToResponse(post, myReactionType, reposted, bookmarked);
     }
 
     @Transactional
@@ -86,7 +114,13 @@ public class PostService {
 
         Post updated = postRepository.save(post);
         log.info("Post updated: {} by user: {}", postId, userId);
-        return postMapper.mapToResponse(updated);
+
+        List<UUID> ids = List.of(postId);
+        ReactionType myReactionType = findMyReactionTypes(userId, ids).get(postId);
+        boolean reposted   = repostRepository.existsByPostIdAndUserId(postId, userId);
+        boolean bookmarked = bookmarkRepository.existsByPostIdAndUserId(postId, userId);
+
+        return postMapper.mapToResponse(updated, myReactionType, reposted, bookmarked);
     }
 
     @Transactional
@@ -110,6 +144,7 @@ public class PostService {
         List<UUID> ids = postRepository.findPublicFeedIds(cursor, Limit.of(size + 1));
         return fetchPagedPosts(ids, size);
     }
+
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getPostsByHashtag(String hashtag, UUID cursor, int size) {
         String normalized = hashtag.toLowerCase();
@@ -135,26 +170,35 @@ public class PostService {
         List<UUID> ids = postRepository.findRepliesIds(postId, cursor, Limit.of(size + 1));
         return fetchPagedPosts(ids, size);
     }
+
     private CursorResponse<PostResponse> fetchPagedPosts(List<UUID> ids, int size) {
         if (ids.isEmpty()) {
-            return AppUtil.buildCursorResponse(Collections.emptyList(), size, Post::getId, postMapper::mapToResponse);
+            return AppUtil.buildCursorResponse(
+                    Collections.emptyList(), size, Post::getId,
+                    p -> postMapper.mapToResponse(p, null, false, false));
         }
 
-        // Lấy chi tiết các Post từ DB và đưa vào Map O(1)
-        // function (existing, replacement) -> existing để phòng lỗi trùng key
         Map<UUID, Post> postMap = postRepository.findAllWithDetailsByIds(ids)
                 .stream()
-                .collect(Collectors.toMap(
-                        Post::getId,
-                        p -> p,
-                        (existing, replacement) -> existing));
+                .collect(Collectors.toMap(Post::getId, p -> p, (existing, replacement) -> existing));
 
-        // Tái cấu trúc List Post đi theo đúng thứ tự chuẩn xác của mảng ids gốc
         List<Post> posts = ids.stream()
                 .map(postMap::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        return AppUtil.buildCursorResponse(posts, size, Post::getId, postMapper::mapToResponse);
+
+        // 3 query batch — CHỈ 1 LẦN cho cả trang, không phải N+1 theo từng post.
+        UUID userId = currentUserIdOrNull();
+        Map<UUID, ReactionType> myReactionByPostId = findMyReactionTypes(userId, ids);
+        Set<UUID> bookmarkedIds = userId != null ? bookmarkRepository.findBookmarkedPostIds(userId, ids) : Set.of();
+        Set<UUID> repostedIds   = userId != null ? repostRepository.findRepostedPostIds(userId, ids)     : Set.of();
+
+        return AppUtil.buildCursorResponse(posts, size, Post::getId, p ->
+                postMapper.mapToResponse(
+                        p,
+                        myReactionByPostId.get(p.getId()), // null nếu chưa react
+                        repostedIds.contains(p.getId()),
+                        bookmarkedIds.contains(p.getId())));
     }
 
     private void checkPostExistsOrThrow(UUID postId) {

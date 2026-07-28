@@ -9,6 +9,7 @@ import com.connecthub.modules.features.post.entity.Media;
 import com.connecthub.modules.features.post.entity.Mention;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.post.entity.PostHashtag;
+import com.connecthub.modules.features.post.enums.ReactionType;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import org.mapstruct.Mapper;
@@ -64,7 +65,15 @@ public interface PostMapper {
     @Mapping(target = "media",  expression = "java(mapMedia(post.getMedia()))")
     QuotePostResponse toQuotePostResponse(Post post);
 
-    default PostResponse mapToResponse(Post post) {
+    /**
+     * Map post kèm trạng thái reacted/reposted/bookmarked của user hiện tại.
+     * BẮT BUỘC phải truyền từ Service (không tự query trong mapper) — để:
+     *  - Service có thể batch-query 1 lần cho cả trang feed (tránh N+1)
+     *  - Mapper vẫn thuần/stateless, dễ test
+     * Dùng hàm này ở MỌI nơi trả PostResponse — không dùng bản 3-arg=false phía dưới
+     * trừ trường hợp chắc chắn là post vừa tạo (createPost).
+     */
+    default PostResponse mapToResponse(Post post, ReactionType myReactionType, boolean reposted, boolean bookmarked) {
         return PostResponse.builder()
                 .id(post.getId())
                 .author(toUserSummaryResponse(post.getUser()))
@@ -80,14 +89,18 @@ public interface PostMapper {
                 .repostCount((int) post.getRepostCount())
                 .bookmarkCount((int) post.getBookmarkCount())
                 .viewCount((int) post.getViewCount())
-                .reacted(false)
-                .bookmarked(false)
-                .reposted(false)
+                .myReactionType(myReactionType)
+                .reacted(myReactionType != null)
+                .bookmarked(bookmarked)
+                .reposted(reposted)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
     }
 
+    default PostResponse mapToResponseForNewPost(Post post) {
+        return mapToResponse(post, null, false, false);
+    }
     default List<MediaResponse> mapMedia(Set<Media> media) {
         if (media == null) return List.of();
         return media.stream().map(this::toMediaResponse).toList();

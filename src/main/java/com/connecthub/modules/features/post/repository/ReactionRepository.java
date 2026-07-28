@@ -2,7 +2,7 @@ package com.connecthub.modules.features.post.repository;
 
 import com.connecthub.modules.features.post.dto.projection.ReactionTypeCountProjection;
 import com.connecthub.modules.features.post.entity.Reaction;
-import com.connecthub.modules.features.post.enums.ReactionType;
+import com.connecthub.modules.features.post.dto.projection.MyReactionProjection;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -39,4 +40,10 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
         GROUP BY r.type
     """)
     List<ReactionTypeCountProjection> countByPostIdGroupByType(@Param("postId") UUID postId);
+    @Query("SELECT r.post.id FROM Reaction r WHERE r.user.id = :userId AND r.post.id IN :postIds")
+    Set<UUID> findReactedPostIds(@Param("userId") UUID userId, @Param("postIds") List<UUID> postIds);
+
+    @Query("SELECT r.post.id AS postId, r.type AS type FROM Reaction r " +
+            "WHERE r.user.id = :userId AND r.post.id IN :postIds")
+    List<MyReactionProjection> findMyReactionTypes(@Param("userId") UUID userId, @Param("postIds") List<UUID> postIds);
 }

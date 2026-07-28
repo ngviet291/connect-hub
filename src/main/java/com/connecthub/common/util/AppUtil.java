@@ -120,4 +120,8 @@ public class AppUtil {
                 .last(page.isLast())
                 .build();
     }
+    public static UUID currentUserIdOrNull() {
+        try { return userIdFromAuthentication(); }
+        catch (Exception e) { return null; }
+    }
 }
