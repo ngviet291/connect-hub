@@ -173,7 +173,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public CursorResponse<PostResponse> getReplies(UUID postId, UUID cursor, int size) {
         checkPostExistsOrThrow(postId);
-        List<UUID> ids = postRepository.findRepliesIds(postId, cursor, Limit.of(size + 1));
+        List<UUID> ids = postRepository.findRepliesByPostIdWithMedia(postId, cursor, Limit.of(size + 1));
         return fetchPagedPosts(ids, size);
     }
 

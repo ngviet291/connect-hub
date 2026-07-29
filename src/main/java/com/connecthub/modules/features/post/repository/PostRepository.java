@@ -232,9 +232,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
                                 @Param("cursor") UUID cursor,
                                 Limit limit);
 
-    // Bài viết có đính kèm media (ảnh/video) của 1 user cụ thể — dùng cho tab "File phương tiện".
-    // `p.media IS NOT EMPTY` dịch ra EXISTS subquery, không cần JOIN FETCH ở query IDs này
-    // (giống các query IDs khác trong file, JOIN FETCH thật để ở findAllWithDetailsByIds).
     @Query("""
         SELECT p.id FROM Post p
         WHERE p.user.username = :username
@@ -251,4 +248,17 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
                                     @Param("currentUserId") UUID currentUserId,
                                     @Param("cursor") UUID cursor,
                                     Limit limit);
+    @Query("""
+        SELECT p.id
+        FROM Post p
+        WHERE p.parentPost.id = :postId
+        AND p.isDeleted = false
+        AND (:cursor IS NULL OR p.id < :cursor)
+        ORDER BY p.createdAt DESC
+        """)
+    List<UUID> findRepliesByPostIdWithMedia(
+            @Param("postId") UUID postId,
+            @Param("cursor") UUID cursor,
+            Limit limit
+    );
 }
