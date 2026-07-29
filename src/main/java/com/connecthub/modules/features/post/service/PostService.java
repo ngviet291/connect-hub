@@ -42,6 +42,7 @@ public class PostService {
     private final ReactionRepository reactionRepository;
     private final RepostRepository repostRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final MediaRepository mediaRepository;
 
     private UUID currentUserIdOrNull() {
         try {
@@ -98,7 +99,11 @@ public class PostService {
             post.setContent(request.getContent());
         if (request.getVisibility() != null)
             post.setVisibility(request.getVisibility());
-
+        if (request.getMediaIdsToDelete() != null && !request.getMediaIdsToDelete().isEmpty()) {
+            mediaRepository.deleteByIdsAndPostId(request.getMediaIdsToDelete(), postId);
+            // Sync lại collection trong memory để mapper không map media cũ
+            post.getMedia().removeIf(m -> request.getMediaIdsToDelete().contains(m.getId()));
+        }
         if (request.getHashtags() != null) {
             postHashtagRepository.deleteByPostId(post.getId());
             post.setPostHashtags(request.getHashtags().isEmpty()

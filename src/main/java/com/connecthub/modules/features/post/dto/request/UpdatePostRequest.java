@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -27,7 +28,7 @@ public class UpdatePostRequest {
     @Schema(description = "Danh sách hashtag (không cần dấu #)", example = "[\"spring\", \"connecthub\"]")
     @Size(max = 20, message = "error.post.hashtags_limit")
     private List<@Pattern(regexp = "^[a-zA-Z0-9_]{1,30}$", message = "error.post.hashtag_invalid") String> hashtags;
-
+    private List<UUID> mediaIdsToDelete;
     @Size(max = 20, message = "error.post.mentions_limit")
     private List<@ValidUsername String> mentionUsernames;
 }
