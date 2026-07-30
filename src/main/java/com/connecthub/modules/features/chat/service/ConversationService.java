@@ -214,7 +214,7 @@ public class ConversationService {
     private String resolveDisplayName(Conversation conversation, ConversationMember peerMember) {
         String format = "%s và %d người khác";
         if (conversation.getType() == ConversationType.PRIVATE) {
-            return peerMember.getUser().getUsername();
+            return peerMember.getUser().getFullName();
         }
         if (conversation.getName() != null && !conversation.getName().isBlank()) {
             return conversation.getName();
