@@ -9,7 +9,7 @@ import com.connecthub.modules.features.post.entity.PostHashtag;
 import com.connecthub.modules.features.post.mapper.PostMapper;
 import com.connecthub.modules.features.post.repository.HashtagRepository;
 import com.connecthub.modules.features.post.repository.PostRepository;
-import com.connecthub.modules.features.search.dto.response.HashtagSearchResponse;
+import com.connecthub.modules.features.post.dto.response.HashtagResponse;
 import com.connecthub.modules.features.search.service.SearchService;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
@@ -356,7 +356,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("zzz", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>());
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("zzz", null, 5);
 
             assertFalse(response.isHasNext());
@@ -365,7 +365,7 @@ class SearchServiceTest {
         }
 
         @Test
-        @DisplayName("Thành công - Trang cuối, map đúng fields HashtagSearchResponse")
+        @DisplayName("Thành công - Trang cuối, map đúng fields HashtagResponse")
         void searchHashtags_LastPage_MapsFieldsCorrectly() {
             Hashtag h1 = buildHashtag("java", 3);
             Hashtag h2 = buildHashtag("javascript", 7);
@@ -373,13 +373,13 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("java", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>(List.of(h1, h2)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("java", null, 5);
 
             assertFalse(response.isHasNext());
             assertEquals(2, response.getContent().size());
 
-            HashtagSearchResponse first = response.getContent().get(0);
+            HashtagResponse first = response.getContent().get(0);
             assertEquals(h1.getId(), first.getId());
             assertEquals("java", first.getName());
             assertEquals(3, first.getPostCount());
@@ -396,7 +396,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("fun", null, Limit.of(size + 1)))
                     .thenReturn(new ArrayList<>(List.of(h1, h2, h3)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("fun", null, size);
 
             assertTrue(response.isHasNext());
@@ -435,7 +435,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("empty", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>(List.of(h)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("empty", null, 5);
 
             assertEquals(0, response.getContent().get(0).getPostCount());
@@ -449,7 +449,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("new", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>(List.of(h)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("new", null, 5);
 
             assertEquals(0, response.getContent().get(0).getPostCount());
@@ -463,7 +463,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("backend", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>(List.of(h)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("backend", null, 5);
 
             assertEquals(5, response.getContent().get(0).getPostCount());
@@ -479,7 +479,7 @@ class SearchServiceTest {
             when(hashtagRepository.searchByName("test", null, Limit.of(6)))
                     .thenReturn(new ArrayList<>(List.of(h)));
 
-            CursorResponse<HashtagSearchResponse> response =
+            CursorResponse<HashtagResponse> response =
                     searchService.searchHashtags("test", null, 5);
 
             assertEquals(now, response.getContent().get(0).getCreatedAt());

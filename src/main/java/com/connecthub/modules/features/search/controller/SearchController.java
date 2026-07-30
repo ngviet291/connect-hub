@@ -3,7 +3,7 @@
     import com.connecthub.common.dto.response.ApiResponse;
     import com.connecthub.common.dto.response.CursorResponse;
     import com.connecthub.modules.features.post.dto.response.PostResponse;
-    import com.connecthub.modules.features.search.dto.response.HashtagSearchResponse;
+    import com.connecthub.modules.features.post.dto.response.HashtagResponse;
     import com.connecthub.modules.features.search.enums.SearchResponseCode;
     import com.connecthub.modules.features.search.service.SearchService;
     import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
@@ -56,11 +56,11 @@
          * Tìm kiếm hashtag theo tên
          */
         @GetMapping("/hashtags")
-        public ApiResponse<CursorResponse<HashtagSearchResponse>> searchHashtags(
+        public ApiResponse<CursorResponse<HashtagResponse>> searchHashtags(
                 @RequestParam String keyword,
                 @RequestParam(required = false) UUID cursor,
                 @RequestParam(defaultValue = "20") int limit) {
-            return ApiResponse.<CursorResponse<HashtagSearchResponse>>builder()
+            return ApiResponse.<CursorResponse<HashtagResponse>>builder()
                     .code(SearchResponseCode.SEARCH_HASHTAGS_SUCCESS.getCode())
                     .message(SearchResponseCode.SEARCH_HASHTAGS_SUCCESS.getMessage())
                     .data(searchService.searchHashtags(keyword, cursor, limit))

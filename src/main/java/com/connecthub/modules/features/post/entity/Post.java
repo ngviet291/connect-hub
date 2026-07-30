@@ -22,7 +22,12 @@ import java.util.UUID;
 @Builder
 @Entity
 @SQLDelete(sql = "UPDATE post SET deleted_at = NOW() ,is_deleted = true WHERE id = ?")
-@Table(name = "post")
+@Table(
+        name = "post",
+        indexes = {
+                @Index(name = "idx_post_created_at_is_deleted", columnList = "created_at, is_deleted")
+        }
+)
 public class Post extends BaseEntity {
     @Id
     private UUID id;

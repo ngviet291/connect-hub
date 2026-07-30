@@ -14,7 +14,7 @@ import com.connecthub.modules.features.post.repository.HashtagRepository;
 import com.connecthub.modules.features.post.repository.PostRepository;
 import com.connecthub.modules.features.post.repository.ReactionRepository;
 import com.connecthub.modules.features.post.repository.RepostRepository;
-import com.connecthub.modules.features.search.dto.response.HashtagSearchResponse;
+import com.connecthub.modules.features.post.dto.response.HashtagResponse;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import com.connecthub.modules.features.user.entity.User;
 import com.connecthub.modules.features.user.repository.UserRepository;
@@ -118,7 +118,7 @@ public class SearchService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ROLE_USER')")
-    public CursorResponse<HashtagSearchResponse> searchHashtags(
+    public CursorResponse<HashtagResponse> searchHashtags(
             String keyword,
             UUID cursor,
             int size) {
@@ -141,8 +141,8 @@ public class SearchService {
                         HashtagPostCountProjection::getHashtagId,
                         HashtagPostCountProjection::getPostCount));
 
-        List<HashtagSearchResponse> content = hashtags.stream()
-                .map(h -> HashtagSearchResponse.builder()
+        List<HashtagResponse> content = hashtags.stream()
+                .map(h -> HashtagResponse.builder()
                         .id(h.getId())
                         .name(h.getName())
                         .postCount(
@@ -156,7 +156,7 @@ public class SearchService {
         return AppUtil.buildCursorResponse(
                 content,
                 size,
-                HashtagSearchResponse::getId,
+                HashtagResponse::getId,
                 Function.identity());
     }
 
@@ -165,8 +165,8 @@ public class SearchService {
                 .content(List.of()).hasNext(false).nextCursor(null).build();
     }
 
-    private CursorResponse<HashtagSearchResponse> emptyCursorHashtag() {
-        return CursorResponse.<HashtagSearchResponse>builder()
+    private CursorResponse<HashtagResponse> emptyCursorHashtag() {
+        return CursorResponse.<HashtagResponse>builder()
                 .content(List.of()).hasNext(false).nextCursor(null).build();
     }
 }

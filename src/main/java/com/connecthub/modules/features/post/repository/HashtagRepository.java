@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.post.repository;
 
 import com.connecthub.modules.features.post.dto.projection.HashtagPostCountProjection;
+import com.connecthub.modules.features.post.dto.projection.TrendingHashtagProjection;
 import com.connecthub.modules.features.post.entity.Hashtag;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -38,5 +40,17 @@ public interface HashtagRepository extends JpaRepository<Hashtag, UUID> {
     GROUP BY ph.hashtag.id
 """)
     List<HashtagPostCountProjection> countPostsByHashtagIds(@Param("ids") List<UUID> ids);
+
+    @Query("""
+        SELECT h.id AS id, h.name AS name, COUNT(p.id) AS postCount
+        FROM PostHashtag ph
+        JOIN ph.hashtag h
+        JOIN ph.post p
+        WHERE p.isDeleted = false
+          AND p.createdAt >= :since
+        GROUP BY h.id, h.name
+        ORDER BY COUNT(p.id) DESC
+        """)
+    List<TrendingHashtagProjection> findTrendingHashtags(LocalDateTime since, Limit limit);
 
 }

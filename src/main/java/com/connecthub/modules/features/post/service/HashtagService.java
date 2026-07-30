@@ -1,14 +1,22 @@
 package com.connecthub.modules.features.post.service;
 
 import com.connecthub.common.util.AppUtil;
+import com.connecthub.modules.features.post.dto.projection.TrendingHashtagProjection;
+import com.connecthub.modules.features.post.dto.response.HashtagResponse;
 import com.connecthub.modules.features.post.entity.Hashtag;
 import com.connecthub.modules.features.post.entity.Post;
 import com.connecthub.modules.features.post.entity.PostHashtag;
+import com.connecthub.modules.features.post.mapper.HashtagMapper;
 import com.connecthub.modules.features.post.repository.HashtagRepository;
 import com.connecthub.modules.features.post.repository.PostHashtagRepository;
+import jakarta.persistence.PreUpdate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +29,7 @@ public class HashtagService {
 
     private final HashtagRepository hashtagRepository;
     private final PostHashtagRepository postHashtagRepository;
-
+    private final HashtagMapper hashtagMapper;
     public List<PostHashtag> addHashtagsToPost(Post post, List<String> hashtags) {
         List<String> normalized = hashtags.stream().map(String::toLowerCase).toList();
 
@@ -49,5 +57,18 @@ public class HashtagService {
                 .toList();
 
         return postHashtagRepository.saveAll(toSave); // 1 batch INSERT
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('USER')")
+    public List<HashtagResponse> getTrendingHashtags(int limit) {
+        // lấy các hashtag được sử dụng nhiều nhất trong 7 ngày gần đây
+        LocalDateTime since = LocalDateTime.now().minusDays(100);
+        List<TrendingHashtagProjection> trending = hashtagRepository.findTrendingHashtags(since, Limit.of(limit));
+
+        return trending.stream()
+                .map(hashtagMapper::toHashtagResponse)
+                .toList();
+
     }
 }
