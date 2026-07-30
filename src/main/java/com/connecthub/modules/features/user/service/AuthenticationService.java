@@ -165,7 +165,7 @@ public class AuthenticationService {
 
 
     @Transactional
-    @PreAuthorize("#request.username == authentication.name")
+    @PreAuthorize("#request.username == authentication.principal.claims['username']")
     public UserChangePasswordResponse changePassword(UserChangePasswordRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(UserNotFoundException::new);

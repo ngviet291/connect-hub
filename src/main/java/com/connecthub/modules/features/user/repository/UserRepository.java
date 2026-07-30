@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
                 SELECT u FROM User u
                 JOIN FETCH u.roles
-                WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%'))
+                WHERE LOWER(u.username) = LOWER(TRIM(:username))
             """)
     Optional<User> findByUsername(@Param("username") String username);
 

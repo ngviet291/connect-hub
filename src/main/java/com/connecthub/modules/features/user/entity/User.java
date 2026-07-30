@@ -51,7 +51,8 @@ public class User extends BaseEntity {
     private boolean isActive = true;
 
     @Enumerated(EnumType.STRING)
-    private UserStatus status;
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
     @OneToMany(mappedBy = "following")
     private Set<Follow> followers;
