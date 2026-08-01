@@ -2,12 +2,14 @@ package com.connecthub.modules.features.social.controller;
 
 import com.connecthub.common.dto.response.ApiResponse;
 import com.connecthub.common.dto.response.CursorResponse;
+import com.connecthub.modules.features.social.dto.response.SuggestedUserResponse;
 import com.connecthub.modules.features.social.enums.FollowResponseCode;
 import com.connecthub.modules.features.social.service.FollowService;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -37,6 +39,15 @@ public class FollowController {
                 .code(FollowResponseCode.GET_FOLLOWERS_SUCCESS.getCode())
                 .message(FollowResponseCode.GET_FOLLOWERS_SUCCESS.getMessage())
                 .data(followService.getFollowers(username, cursor, size))
+                .build();
+    }
+
+    @GetMapping("/suggested/{limit}")
+    public ApiResponse<List<SuggestedUserResponse>> getSuggestedFollowers(@PathVariable int limit) {
+        return ApiResponse.<List<SuggestedUserResponse>>builder()
+                .code(FollowResponseCode.GET_SUGGESTED_FOLLOWERS_SUCCESS.getCode())
+                .message(FollowResponseCode.GET_SUGGESTED_FOLLOWERS_SUCCESS.getMessage())
+                .data(followService.getSuggestedUsers(limit))
                 .build();
     }
 }

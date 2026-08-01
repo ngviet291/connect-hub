@@ -6,8 +6,8 @@ import lombok.Getter;
 public enum FollowResponseCode {
     FOLLOW_SUCCESS("Followed successfully", 200),
     GET_FOLLOWING_SUCCESS("Successfully retrieved following users", 200),
-    GET_FOLLOWERS_SUCCESS("Successfully retrieved followers", 200)
-
+    GET_FOLLOWERS_SUCCESS("Successfully retrieved followers", 200),
+    GET_SUGGESTED_FOLLOWERS_SUCCESS("Successfully retrieved suggested followers", 200)
     ;
 
     private final String message;

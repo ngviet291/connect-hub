@@ -1,6 +1,7 @@
 package com.connecthub.modules.features.user.mapper;
 
 import com.connecthub.modules.features.notification.dto.response.NotificationUserSummaryResponse;
+import com.connecthub.modules.features.social.dto.projection.SuggestedUserProjection;
 import com.connecthub.modules.features.social.projection.FollowingRowProjection;
 import com.connecthub.modules.features.user.dto.request.UserCreateRequest;
 import com.connecthub.modules.features.user.dto.request.UserUpdateRequest;
@@ -51,4 +52,5 @@ public interface UserMapper {
     NotificationUserSummaryResponse toNotificationUserSummaryResponse(UUID id, String username, String avatarUrl);
 
     UserSummaryResponse fromFollowingRowProjection(FollowingRowProjection followingRowProjection);
+
 }

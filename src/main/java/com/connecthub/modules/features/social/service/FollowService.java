@@ -3,6 +3,9 @@ package com.connecthub.modules.features.social.service;
 import com.connecthub.common.dto.response.CursorResponse;
 import com.connecthub.common.util.AppUtil;
 import com.connecthub.modules.features.chat.entity.Conversation;
+import com.connecthub.modules.features.social.dto.projection.SuggestedUserProjection;
+import com.connecthub.modules.features.social.dto.response.SuggestedUserResponse;
+import com.connecthub.modules.features.social.mapper.FollowMapper;
 import com.connecthub.modules.features.social.projection.FollowingRowProjection;
 import com.connecthub.modules.features.social.repository.FollowRepository;
 import com.connecthub.modules.features.user.dto.response.UserSummaryResponse;
@@ -28,6 +31,7 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final FollowMapper followMapper;
 
     /**
      * Check if two users are mutual followers
@@ -77,5 +81,17 @@ public class FollowService {
         );
 
         return AppUtil.buildCursorResponse(followersRowProjections, size, FollowingRowProjection::getFollowId, userMapper::fromFollowingRowProjection);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @Transactional(readOnly = true)
+    public List<SuggestedUserResponse> getSuggestedUsers(int limit) {
+        UUID currentUserId = AppUtil.userIdFromAuthentication();
+
+        List<SuggestedUserProjection> suggestedUsers = followRepository.findSuggestedUsers(currentUserId, Limit.of(limit));
+
+        return suggestedUsers.stream()
+                .map(followMapper::fromSuggestedUserProjection)
+                .toList();
     }
 }
