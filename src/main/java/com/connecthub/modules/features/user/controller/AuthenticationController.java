@@ -9,6 +9,7 @@ import com.connecthub.modules.features.user.dto.response.UserChangePasswordRespo
 import com.connecthub.modules.features.user.dto.response.UserResponse;
 import com.connecthub.modules.features.user.enums.AuthResponseCode;
 import com.connecthub.modules.features.user.service.AuthenticationService;
+import com.connecthub.modules.features.user.service.ForgotPasswordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ public class AuthenticationController {
 
 
     private final AuthenticationService authenticationService;
+    private final ForgotPasswordService forgotPasswordService;
 
     // Response status is 201 Created because we are creating a new user when registering
     @ResponseStatus(HttpStatus.CREATED)
@@ -80,6 +82,24 @@ public class AuthenticationController {
         return ApiResponse.<Void>builder()
                 .code(AuthResponseCode.LOGOUT_SUCCESS.getCode())
                 .message(AuthResponseCode.LOGOUT_SUCCESS.getMessage())
+                .build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        forgotPasswordService.sendForgotPasswordEmail(request);
+        return ApiResponse.<Void>builder()
+                .code(AuthResponseCode.FORGOT_PASSWORD_SUCCESS.getCode())
+                .message(AuthResponseCode.FORGOT_PASSWORD_SUCCESS.getMessage())
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        forgotPasswordService.resetPassword(request);
+        return ApiResponse.<Void>builder()
+                .code(AuthResponseCode.RESET_PASSWORD_SUCCESS.getCode())
+                .message(AuthResponseCode.RESET_PASSWORD_SUCCESS.getMessage())
                 .build();
     }
 }

@@ -37,6 +37,8 @@ public class SecurityConfig {
             "/v1/auth/login",
             "/v1/auth/register",
             "/v1/auth/refresh-token",
+            "/v1/auth/forgot-password",
+            "/v1/auth/reset-password",
     };
     private static final String[] PUBLIC_ENDPOINTS_GET = {
             "/v1/categories/**",
