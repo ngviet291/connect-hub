@@ -9,7 +9,9 @@ public enum AuthResponseCode {
     LOGOUT_SUCCESS("success.auth.logout", 1002),
     TOKEN_REFRESH_SUCCESS("success.auth.token_refresh", 1003),
     PASSWORD_CHANGE_SUCCESS("success.auth.password_change", 1004),
-    INTROSPECT_SUCCESS("success.auth.introspect", 1005);
+    INTROSPECT_SUCCESS("success.auth.introspect", 1005),
+    FORGOT_PASSWORD_SUCCESS("success.auth.forgot_password", 1006),
+    RESET_PASSWORD_SUCCESS("success.auth.reset_password", 1007);
 
     private final String message;
     private final int code;

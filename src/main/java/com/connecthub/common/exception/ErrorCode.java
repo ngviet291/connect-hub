@@ -41,10 +41,7 @@ public enum ErrorCode implements BaseErrorCode {
     USER_NOT_BLOCKED("error.user_not_blocked", HttpStatus.BAD_REQUEST),
     VALIDATION_FAILED("error.validation_failed", HttpStatus.BAD_REQUEST),
     INVALID_UUID("error.invalid_uuid", HttpStatus.BAD_REQUEST),
-
-
-
-
+    INVALID_RESET_TOKEN("error.invalid_reset_token", HttpStatus.BAD_REQUEST),
     ;
 
 

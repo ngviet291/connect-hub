@@ -127,10 +127,12 @@ public class AuthenticationService {
 
     public IntrospectResponse introspect(IntrospectRequest request) {
         IntrospectResponse introspectResponse = jwtService.introspect(request.getAccessToken());
-        banService.findActiveBanForUser(UUID.fromString(introspectResponse.getUserId()))
-                .ifPresent(ban -> {
-                    throw new AccountLockedException(ban.getEndDate());
-                });
+        if (introspectResponse.isActive() && introspectResponse.getUserId() != null) {
+            banService.findActiveBanForUser(UUID.fromString(introspectResponse.getUserId()))
+                    .ifPresent(ban -> {
+                        throw new AccountLockedException(ban.getEndDate());
+                    });
+        }
         return introspectResponse;
     }
 
